@@ -11,6 +11,10 @@
 		"NuxtUiMcp": {
 			"url": "https://ui.nuxt.com/mcp",
 			"type": "http"
+		},
+		"PrismaMCP": {
+			"url": "https://mcp.prisma.io/mcp",
+			"type": "http"
 		}
 	},
 	"inputs": []

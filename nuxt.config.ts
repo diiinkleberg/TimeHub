@@ -2,12 +2,11 @@ export default defineNuxtConfig({
   modules: [
     "@nuxt/eslint",
     "@nuxt/ui",
-    "@nuxt/devtools",
     "@nuxt/test-utils",
     "@nuxt/fonts",
+    "@vueuse/nuxt",
     "@pinia/nuxt",
     "pinia-plugin-persistedstate",
-    "@vueuse/nuxt",
   ],
 
   devtools: {
@@ -17,15 +16,19 @@ export default defineNuxtConfig({
     },
   },
 
+  eslint: {
+    config: {
+      stylistic: {
+        commaDangle: "never",
+        braceStyle: "1tbs",
+      },
+    },
+  },
+
   css: ["~/assets/css/main.css"],
 
   runtimeConfig: {
-    databaseHost: process.env.DATABASE_HOST,
-    databasePort: process.env.DATABASE_PORT,
-    databaseName: process.env.DATABASE_NAME,
-    databaseUser: process.env.DATABASE_USER,
-    databasePassword: process.env.DATABASE_PASSWORD,
-    databaseTrustServerCert: process.env.DATABASE_TRUST_SERVER_CERT === "true",
+    databaseUrl: process.env.DATABASE_URL,
 
     betterAuthSecret: process.env.BETTER_AUTH_SECRET,
 
@@ -46,23 +49,18 @@ export default defineNuxtConfig({
 
   routeRules: {
     "api/**": { cors: true },
-    "/": { prerender: true },
   },
 
   compatibilityDate: "2025-01-15",
 
   nitro: {
     experimental: {
-      openAPI: true,
+      wasm: true,
     },
-  },
-
-  eslint: {
-    config: {
-      stylistic: {
-        commaDangle: "never",
-        braceStyle: "1tbs",
-      },
-    },
-  },
+    esbuild: {
+      options: {
+        target: "es2024",
+      }
+    }
+  }
 });

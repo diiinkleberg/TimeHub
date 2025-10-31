@@ -24,7 +24,6 @@ logs
 !.env.example
 
 # Prisma generated files (new generator)
-/src/generated/prisma
-
-/server/lib/db/generated
 /node_modules/.prisma
+
+.vscode

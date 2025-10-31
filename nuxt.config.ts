@@ -1,3 +1,5 @@
+import { prerender } from "process";
+
 export default defineNuxtConfig({
   modules: [
     "@nuxt/eslint",
@@ -8,6 +10,8 @@ export default defineNuxtConfig({
     "@pinia/nuxt",
     "pinia-plugin-persistedstate",
   ],
+
+  compatibilityDate: "2025-01-15",
 
   devtools: {
     enabled: true,
@@ -51,16 +55,28 @@ export default defineNuxtConfig({
     "api/**": { cors: true },
   },
 
-  compatibilityDate: "2025-01-15",
-
   nitro: {
     experimental: {
       wasm: true,
     },
-    esbuild: {
-      options: {
-        target: "es2024",
-      }
-    }
-  }
+
+    externals: {
+      inline: [
+        "@prisma/client",
+        ".prisma/client",
+      ],
+    },
+
+    moduleSideEffects: ["@prisma/client"],
+
+    rollupConfig: {
+      external: ["@prisma/client", ".prisma/client", /^\.prisma\//],
+    },
+  },
+
+  vite: {
+    optimizeDeps: {
+      exclude: ["@prisma/client"],
+    },
+  },
 });

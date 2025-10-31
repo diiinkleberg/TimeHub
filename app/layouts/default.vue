@@ -1,75 +1,77 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
+import type { NavigationMenuItem } from "@nuxt/ui";
 
-const open = ref(false)
+const open = ref(false);
+const route = useRoute();
 
-const route = useRoute()
 const routeTitle = computed(() => {
-  const titles: Record<string, string> = {
-    '/dashboard': 'Dashboard',
-    '/time-entries': 'Time Entries',
-    '/settings': 'Settings',
-    '/settings/general': 'Settings - General'
-  }
-  return titles[route.path] || 'TimeHub'
-})
+  const currentRoute =
+    route.path.split("/").findLast((segment) => segment.length > 0) || "Dashboard";
+    return currentRoute
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+});
 
 const links = [
   {
-    label: 'Home',
-    icon: 'i-lucide-house',
-    to: '/dashboard',
+    label: "Home",
+    icon: "i-lucide-house",
+    to: "/dashboard",
     onSelect: () => {
-      open.value = false
-    }
+      open.value = false;
+    },
   },
   {
-    label: 'Time Entries',
-    icon: 'i-lucide-clock',
-    to: '/time-entries',
+    label: "Time Entries",
+    icon: "i-lucide-clock",
+    to: "/time-entries",
     onSelect: () => {
-      open.value = false
-    }
+      open.value = false;
+    },
   },
   {
-    label: 'Settings',
-    to: '/settings',
-    icon: 'i-lucide-settings',
+    label: "Profile",
+    icon: "i-lucide-user",
+    to: "/profile",
+    onSelect: () => {
+      open.value = false;
+    },
+  },
+  {
+    label: "Settings",
+    to: "/settings",
+    icon: "i-lucide-settings",
     defaultOpen: true,
-    type: 'trigger',
+    type: "trigger",
     children: [
       {
-        label: 'General',
-        to: '/settings/general',
+        label: "General",
+        to: "/settings/general",
         exact: true,
         onSelect: () => {
-          open.value = false
-        }
-      }
-    ]
-  }
-] satisfies NavigationMenuItem[]
+          open.value = false;
+        },
+      },
+      {
+        label: "Integrations",
+        to: "/settings/integrations",
+        exact: true,
+        onSelect: () => {
+          open.value = false;
+        },
+      },
+    ],
+  },
+] satisfies NavigationMenuItem[];
 
 const groups = computed(() => [
   {
-    id: 'links',
-    label: 'Go to',
-    items: links
+    id: "links",
+    label: "Go to",
+    items: links,
   },
-  {
-    id: 'code',
-    label: 'Code',
-    items: [
-      {
-        id: 'source',
-        label: 'View page source',
-        icon: 'i-simple-icons-github',
-        to: `https://github.com/nuxt-ui-templates/dashboard/blob/main/app/pages${route.path === '/' ? '/index' : route.path}.vue`,
-        target: '_blank'
-      }
-    ]
-  }
-])
+]);
 </script>
 
 <template>
@@ -83,8 +85,9 @@ const groups = computed(() => [
       :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
       <template #header>
-        <h1>TimeHub</h1>
+        <h1 class="text-xl font-bold">TimeHub</h1>
       </template>
+
       <template #default="{ collapsed }">
         <UDashboardSearchButton
           :collapsed="collapsed"
@@ -98,21 +101,21 @@ const groups = computed(() => [
           popover
         />
       </template>
+
       <template #footer="{ collapsed }">
         <AuthUserMenu :collapsed="collapsed" />
       </template>
     </UDashboardSidebar>
 
     <div class="flex-1 flex flex-col w-0">
-      <UDashboardNavbar
-        :title="routeTitle"
-        :ui="{ right: 'gap-3' }"
-      >
+      <UDashboardNavbar :title="routeTitle">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
       </UDashboardNavbar>
+
       <UDashboardSearch :groups="groups" />
+
       <slot />
     </div>
   </UDashboardGroup>

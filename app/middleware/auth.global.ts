@@ -1,4 +1,4 @@
-import { authClient } from '~/lib/auth-client'
+import { authClient } from "~/lib/auth-client"
 
 /**
  * Global authentication middleware.
@@ -7,10 +7,12 @@ import { authClient } from '~/lib/auth-client'
  * Uses replace navigation to avoid history stack issues.
  */
 
+
 export default defineNuxtRouteMiddleware(async (to) => {
   const { data: session } = await authClient.useSession(useFetch)
 
   const isAuthenticated = !!session.value?.user
+
   const isPublic = ['/', '/error'].includes(to.path)
 
   // Redirect logged-in users away from landing page
@@ -23,3 +25,4 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo('/', { replace: true })
   }
 })
+

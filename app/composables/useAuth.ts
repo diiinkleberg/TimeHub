@@ -1,41 +1,48 @@
-import { authClient } from '~/lib/auth-client'
-import type { User } from '#shared/types'
+import { authClient } from "~/lib/auth-client";
+import type { User } from "#shared/types/auth";
 
 export const useAuth = async () => {
-  const sessionData = await authClient.useSession(useFetch)
+  const { data: session } = await authClient.useSession(useFetch);
 
-  const user = computed(() => sessionData.data.value?.user as User | undefined)
-  const isAuthenticated = computed(() => !!user.value)
-  const isPending = computed(() => sessionData.isPending)
+  const user = computed(() => session?.value?.user as User | undefined);
+  const isAuthenticated = computed(() => !!user.value);
 
   return {
     authClient,
-    session: sessionData.data,
-    isPending,
+    session: session.value,
     user,
     isAuthenticated,
 
-    signInWithPlanio: () =>
-      authClient.signIn.social({
-        provider: 'planio',
-        callbackURL: '/dashboard',
-        errorCallbackURL: '/error'
+    signInWithPlanio: async () =>
+      await authClient.signIn.social({
+        provider: "planio",
+        callbackURL: "/dashboard",
+        errorCallbackURL: "/error",
       }),
-    linkGithubAccount: () =>
-      authClient.linkSocial({
-        provider: 'github',
-        callbackURL: '/settings/general',
-        errorCallbackURL: '/error'
+    linkGithubAccount: async () =>
+      await authClient.linkSocial({
+        provider: "github",
+        callbackURL: "/settings/integrations",
+        errorCallbackURL: "/error",
       }),
-    signOut: async () => {
-      await authClient.signOut({
+
+    listAccounts: async () => await authClient.listAccounts(),
+
+    signOut: () => {
+      authClient.signOut({
         fetchOptions: {
           onSuccess: () => {
-            sessionData.data.value = null
-            navigateTo('/', { replace: true })
-          }
-        }
-      })
-    }
-  }
-}
+            session.value = null;
+            navigateTo("/", { replace: true });
+          },
+        },
+      });
+    },
+
+    unlinkGithubAccount: async () => {
+      await authClient.unlinkAccount({
+        providerId: "github",
+      });
+    },
+  };
+};

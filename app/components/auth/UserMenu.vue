@@ -42,8 +42,6 @@ const items = computed<DropdownMenuItem[][]>(() => [
       children: [
         {
           label: 'Primary',
-          slot: 'chip', // ✅ Enables chip slot rendering
-          chip: preferencesStore.primaryColor, // ✅ Current primary color
           content: {
             align: 'center',
             collisionPadding: 16
@@ -62,7 +60,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
         },
         {
           label: 'Neutral',
-          slot: 'chip', // ✅ Enables chip slot rendering
+          slot: 'chip',
           chip:
             preferencesStore.neutralColor === 'neutral'
               ? 'old-neutral'
@@ -168,14 +166,6 @@ const items = computed<DropdownMenuItem[][]>(() => [
         />
       </template>
     </UButton>
-
-    <!--
-      ✅ CORRECT SLOT NAME: #item-leading
-      (NOT #chip-leading)
-
-      This slot renders for items with slot: 'chip'
-      The item.chip property contains the color name
-    -->
     <template #item-leading="{ item }">
       <span
         v-if="(item as any).slot === 'chip'"

@@ -3,28 +3,23 @@ import { genericOAuth } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "./db/prisma";
 import { z } from "zod";
-import { PlanioUserResponseSchema } from "~~/shared/types/planio/contracts";
+import { PlanioUserResponseSchema } from "#shared/schemas";
 
 /**
- * Authentication configuration using BetterAuth with Drizzle ORM adapter.
- * Supports GitHub and Planio OAuth providers.
- * Includes session management and account linking features.
+ * @description Authentication Configuration
  * @see https://better-auth.com
  */
-const config =
-  typeof useRuntimeConfig === "function"
-    ? useRuntimeConfig()
-    : {
-        authGithubClientId: process.env.AUTH_GITHUB_CLIENT_ID || "",
-        authGithubClientSecret: process.env.AUTH_GITHUB_CLIENT_SECRET || "",
-        authPlanioClientId: process.env.AUTH_PLANIO_CLIENT_ID || "",
-        authPlanioClientSecret: process.env.AUTH_PLANIO_CLIENT_SECRET || "",
-        authPlanioBaseUrl: process.env.AUTH_PLANIO_BASE_URL || "",
-        authPlanioScopes: process.env.AUTH_PLANIO_SCOPES || "read",
-        public: {
-          nodeEnv: process.env.NODE_ENV || "development",
-        },
-      };
+const config = {
+  authGithubClientId: process.env.AUTH_GITHUB_CLIENT_ID || "",
+  authGithubClientSecret: process.env.AUTH_GITHUB_CLIENT_SECRET || "",
+  authPlanioClientId: process.env.AUTH_PLANIO_CLIENT_ID || "",
+  authPlanioClientSecret: process.env.AUTH_PLANIO_CLIENT_SECRET || "",
+  authPlanioBaseUrl: process.env.AUTH_PLANIO_BASE_URL || "",
+  authPlanioScopes: process.env.AUTH_PLANIO_SCOPES || "read",
+  public: {
+    nodeEnv: process.env.NODE_ENV || "development",
+  },
+};
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -60,6 +55,7 @@ export const auth = betterAuth({
     github: {
       clientId: config.authGithubClientId,
       clientSecret: config.authGithubClientSecret,
+      scope: ["read:user", "user:email", "repo"],
     },
   },
 
@@ -108,18 +104,8 @@ export const auth = betterAuth({
               );
 
               // Validate response
-              const validated = PlanioUserResponseSchema.safeParse(response);
-
-              if (!validated.success) {
-                const errorTree = z.treeifyError(validated.error);
-                console.error(
-                  "Failed to validate Planio user response:",
-                  errorTree,
-                );
-                throw new Error("Invalid Planio user response");
-              }
-
-              const planioUser = validated.data.user;
+              const { user: planioUser } =
+                PlanioUserResponseSchema.parse(response);
 
               return {
                 id: String(planioUser.id),

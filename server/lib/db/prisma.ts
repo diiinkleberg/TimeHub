@@ -1,21 +1,16 @@
-import { PrismaClient } from "./generated/client";
+import { PrismaClient } from "@prisma/client";
 
 /**
- * Prisma Client Singleton
- * Prevents multiple instances in development with hot reload
- * @see https://www.prisma.io/docs/guides/performance-and-optimization/connection-management
+ * @description Prisma Client Singleton
+ * @returns {PrismaClient} instance
  */
 const prismaClientSingleton = () => {
   return new PrismaClient({
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["error", "warn"]
-        : ["error"],
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 };
 
 declare global {
-  // eslint-disable-next-line no-var
   var prismaGlobal: ReturnType<typeof prismaClientSingleton> | undefined;
 }
 

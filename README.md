@@ -367,3 +367,114 @@ This allows keeping the schema in `server/lib/db/` while the generated client go
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [Better Auth Documentation](https://better-auth.com)
 - [Nuxt UI Documentation](https://ui.nuxt.com)
+
+
+
+
+
+```
+<script setup lang="ts">
+import type { PlanioProject } from "#/shared/types";
+
+interface Props {
+  modelValue?: PlanioProject | null;
+}
+
+interface Emits {
+  (e: "update:modelValue", value: PlanioProject | null): void;
+  (e: "projectSelected", project: PlanioProject): void;
+}
+
+const props = withDefaults(defineProps<Props>(), { modelValue: null });
+const emit = defineEmits<Emits>();
+
+const {
+  data: projects,
+  pending,
+  error,
+} = useFetch<PlanioProject[]>("/api/planio/projects", {
+  server: false,
+  default: () => [],
+});
+
+const projectItems = computed(() =>
+  projects.value.map((project) => ({
+    label: project.name,
+    value: project.id,
+    project,
+  }))
+);
+
+const handleSelection = (selectedItem: { label: string; value: number; project: PlanioProject }) => {
+  if (selectedItem?.project) {
+    emit("update:modelValue", selectedItem.project);
+    emit("projectSelected", selectedItem.project);
+  } else {
+    emit("update:modelValue", null);
+  }
+};
+
+const selectedItem = computed(() =>
+  props.modelValue
+    ? projectItems.value.find((item) => item.value === props.modelValue!.id)
+    : undefined
+);
+</script>
+
+<template>
+  <div class="space-y-2">
+    <label class="block text-sm font-medium text-highlighted">
+      Select Project
+    </label>
+
+    <div
+      v-if="pending"
+      class="flex items-center gap-3 px-4 py-3 w-full h-12 bg-elevated border border-default rounded-lg transition-all duration-200"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="w-4 h-4 animate-spin text-accent"
+      />
+      <span class="text-sm text-muted font-medium">Loading projects...</span>
+    </div>
+
+    <div
+      v-else-if="error"
+      class="text-sm text-red-400 bg-red-900/20 p-2 rounded border border-red-800"
+    >
+      Failed to load projects
+    </div>
+
+    <USelectMenu
+      v-else
+      :model-value="selectedItem"
+      :items="projectItems"
+      placeholder="Search projects..."
+      leading-icon="octicon:project-roadmap-24"
+      class="w-full h-10"
+      :search-input="{
+        placeholder: 'Search by name or identifier...'
+      }"
+      :ui="{
+        base: selectedItem ? 'bg-elevated border-primary text-primary font-bold' : 'bg-elevated border-default text-default',
+        leadingIcon: selectedItem ? 'text-primary' : 'text-muted',
+        placeholder: 'text-muted',
+        trailingIcon: 'text-muted',
+        content: 'bg-elevated border-default shadow-xl',
+        viewport: 'p-1',
+        item: 'text-default hover:bg-muted data-[highlighted]:bg-accented data-[highlighted]:text-highlighted rounded-md px-3 py-2',
+        itemLabel: 'text-default',
+        input: 'bg-elevated  text-default placeholder:text-muted p-0.5'
+      }"
+      @update:model-value="handleSelection"
+    >
+      <template #item-label="{ item }">
+        <div class="flex flex-col">
+          <span class="font-medium text-default">{{ item.label }}</span>
+          <span class="text-xs text-muted">ID: {{ item.value }}</span>
+        </div>
+      </template>
+    </USelectMenu>
+  </div>
+</template>
+```

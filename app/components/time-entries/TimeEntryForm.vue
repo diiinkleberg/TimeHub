@@ -28,7 +28,7 @@ const isValid = computed(() => {
   );
 });
 
-// ✅ Submit handler (will implement POST route next)
+// ✅ Submit handler
 const submitting = ref(false);
 const toast = useToast();
 
@@ -50,7 +50,7 @@ const handleSubmit = async () => {
 
     toast.add({
       title: "Time entry created",
-      description: `Logged ${hours.value}h on ${selectedIssue.value!.subject}`,
+      description: `Logged ${hours.value}h on #${selectedIssue.value!.id}`,
       color: "success",
     });
 
@@ -117,7 +117,7 @@ const handleSubmit = async () => {
       <UFormField label="Description" required>
         <UTextarea
           v-model="comments"
-          rows="4"
+          :rows="4"
           placeholder="What did you work on?"
         />
       </UFormField>

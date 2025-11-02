@@ -2,6 +2,8 @@
 import type { PlanioProject } from "#shared/schemas/planio/project";
 import type { PlanioIssue } from "#shared/schemas/planio/issue";
 
+const { user } = await useAuth();
+
 // State
 const selectedProject = ref<PlanioProject | null>(null);
 const selectedIssue = ref<PlanioIssue | null>(null);

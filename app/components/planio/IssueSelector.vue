@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { PlanioIssue } from "#shared/schemas/planio/issue";
-import { whenever } from "@vueuse/core";
 
 interface Props {
   modelValue?: PlanioIssue | null;
@@ -12,12 +11,16 @@ interface Emits {
   (e: "issueSelected", issue: PlanioIssue): void;
 }
 
-const props = withDefaults(defineProps<Props>(), { 
+const props = withDefaults(defineProps<Props>(), {
   modelValue: null,
-  projectId: null 
+  projectId: null,
 });
 const emit = defineEmits<Emits>();
 
+// ✅ Get auth state
+const { user } = await useAuth();
+
+// ✅ Fetch issues
 const {
   data: issues,
   pending,
@@ -25,85 +28,99 @@ const {
   refresh,
 } = useFetch<PlanioIssue[]>("/api/planio/issues", {
   server: false,
+  lazy: true,
   default: () => [],
   query: computed(() => ({
-    ...(props.projectId && { project_id: props.projectId }), // ✅ Only include if defined
+    ...(props.projectId && { project_id: props.projectId }),
   })),
   watch: [() => props.projectId],
-  immediate: false, // ✅ Don't fetch until projectId is set
+  immediate: false,
 });
 
-// ✅ VueUse: Auto-fetch when projectId changes
-whenever(
-  () => props.projectId,
-  () => {
+// ✅ Wait for Nuxt hydration to complete, then fetch
+const nuxtApp = useNuxtApp();
+
+nuxtApp.hooks.hookOnce('app:suspense:resolve', () => {
+  // This runs AFTER all hydration is complete
+  if (user.value) {
     refresh();
-  },
-  { immediate: true }
-);
+  }
+});
 
 const issueItems = computed(() =>
   issues.value.map((issue) => ({
     label: issue.subject,
     value: issue.id,
-    description: `${issue.project.name} • ${issue.status.name}`,
+    description: `#${issue.id} • ${issue.project.name} • ${issue.status.name}`,
     issue,
-  }))
+  })),
 );
 
 const selectedItem = computed(() =>
   props.modelValue
     ? issueItems.value.find((item) => item.value === props.modelValue!.id)
-    : undefined
+    : undefined,
 );
 
-const handleSelection = (selectedItem?: {
-  label: string;
-  value: number;
-  issue: PlanioIssue;
-}) => {
-  const issue = selectedItem?.issue ?? null;
-  emit("update:modelValue", issue);
-  
-  if (issue) {
-    emit("issueSelected", issue);
+const handleSelection = (
+  selectedItem?: {
+    label: string;
+    value: number;
+    issue: PlanioIssue;
+  } | null,
+) => {
+  if (!selectedItem) {
+    emit("update:modelValue", null);
+    return;
   }
+
+  const issue = selectedItem.issue;
+  emit("update:modelValue", issue);
+  emit("issueSelected", issue);
 };
 
-// ✅ Clear selection when project changes
-watch(() => props.projectId, () => {
-  if (props.modelValue) {
-    emit("update:modelValue", null);
-  }
-});
+// ✅ Clear selection when project filter changes
+watch(
+  () => props.projectId,
+  () => {
+    if (props.modelValue && props.projectId) {
+      if (props.modelValue.project.id !== props.projectId) {
+        emit("update:modelValue", null);
+      }
+    }
+  },
+);
 </script>
 
 <template>
   <UFormField label="Issue">
-    <div v-if="!projectId" class="text-sm text-muted px-3 py-2">
-      Select a project first to see issues
+    <div
+      v-if="!projectId && !pending && issues.length === 0"
+      class="text-sm text-muted px-3 py-2 mb-2"
+    >
+      💡 Tip: Select a project to filter issues, or search all assigned issues
     </div>
 
-    <div v-else-if="pending" class="flex items-center gap-2 px-3 py-2 text-sm text-muted">
+    <div
+      v-if="pending"
+      class="flex items-center gap-2 px-3 py-2 text-sm text-muted"
+    >
       <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
       <span>Loading issues...</span>
     </div>
 
     <div v-else-if="error" class="text-sm text-red-500">
       Failed to load issues
-      <UButton
-        size="xs"
-        variant="ghost"
-        label="Retry"
-        @click="refresh()"
-      />
+      <UButton size="xs" variant="ghost" label="Retry" @click="refresh()" />
     </div>
 
     <USelectMenu
       v-else
       :model-value="selectedItem"
       :items="issueItems"
-      placeholder="Select an issue..."
+      :placeholder="
+        projectId ? 'Search issues in project...' : 'Search all your issues...'
+      "
       leading-icon="i-lucide-circle-dot"
       searchable
       clearable
@@ -113,6 +130,19 @@ watch(() => props.projectId, () => {
         <div class="flex flex-col gap-0.5">
           <span class="font-medium">{{ item.label }}</span>
           <span class="text-xs text-muted">{{ item.description }}</span>
+        </div>
+      </template>
+
+      <template #empty>
+        <div class="text-center py-6 text-muted">
+          <UIcon name="i-lucide-inbox" class="size-8 mx-auto mb-2 opacity-50" />
+          <p class="text-sm">
+            {{
+              projectId
+                ? "No issues found in this project"
+                : "No open issues assigned to you"
+            }}
+          </p>
         </div>
       </template>
     </USelectMenu>

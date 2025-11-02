@@ -14,6 +14,10 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), { modelValue: null });
 const emit = defineEmits<Emits>();
 
+// ✅ Get auth state
+const { user } = await useAuth();
+
+// ✅ Fetch projects
 const {
   data: projects,
   pending,
@@ -21,8 +25,19 @@ const {
   refresh,
 } = useFetch<PlanioProject[]>("/api/planio/projects", {
   server: false,
+  lazy: true,
   default: () => [],
-  immediate: true,
+  immediate: false,
+});
+
+// ✅ Wait for Nuxt hydration to complete, then fetch
+const nuxtApp = useNuxtApp();
+
+nuxtApp.hooks.hookOnce('app:suspense:resolve', () => {
+  // This runs AFTER all hydration is complete
+  if (user.value) {
+    refresh();
+  }
 });
 
 const projectItems = computed(() =>
@@ -31,46 +46,58 @@ const projectItems = computed(() =>
     value: project.id,
     description: project.identifier,
     project,
-  }))
+  })),
 );
 
 const selectedItem = computed(() =>
   props.modelValue
     ? projectItems.value.find((item) => item.value === props.modelValue!.id)
-    : undefined
+    : undefined,
 );
 
-// ✅ VueUse: Handle selection changes
-const handleSelection = (selectedItem?: { 
-  label: string; 
-  value: number; 
-  project: PlanioProject 
-}) => {
-  const project = selectedItem?.project ?? null;
-  emit("update:modelValue", project);
-  
-  // ✅ Only emit projectSelected if actually selected (not cleared)
-  if (project) {
-    emit("projectSelected", project);
+const handleSelection = (
+  selectedItem?: {
+    label: string;
+    value: number;
+    project: PlanioProject;
+  } | null,
+) => {
+  if (!selectedItem) {
+    emit("update:modelValue", null);
+    return;
   }
+
+  const project = selectedItem.project;
+  emit("update:modelValue", project);
+  emit("projectSelected", project);
 };
+
+// ✅ Auto-select if only one project
+whenever(
+  () => projects.value.length === 1 && !props.modelValue,
+  () => {
+    const project = projects.value[0];
+    if (project) {
+      emit("update:modelValue", project);
+      emit("projectSelected", project);
+    }
+  },
+);
 </script>
 
 <template>
   <UFormField label="Project">
-    <div v-if="pending" class="flex items-center gap-2 px-3 py-2 text-sm text-muted">
+    <div
+      v-if="pending"
+      class="flex items-center gap-2 px-3 py-2 text-sm text-muted"
+    >
       <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
       <span>Loading projects...</span>
     </div>
 
     <div v-else-if="error" class="text-sm text-red-500">
-      Failed to load projects
-      <UButton
-        size="xs"
-        variant="ghost"
-        label="Retry"
-        @click="refresh()"
-      />
+      Failed to load projects. Please check your connection and try again.
+      <UButton size="xs" variant="ghost" label="Retry" @click="refresh()" />
     </div>
 
     <USelectMenu
@@ -87,6 +114,13 @@ const handleSelection = (selectedItem?: {
         <div class="flex flex-col gap-0.5">
           <span class="font-medium">{{ item.label }}</span>
           <span class="text-xs text-muted">{{ item.description }}</span>
+        </div>
+      </template>
+
+      <template #empty>
+        <div class="text-center py-6 text-muted">
+          <UIcon name="i-lucide-inbox" class="size-8 mx-auto mb-2 opacity-50" />
+          <p class="text-sm">No projects found</p>
         </div>
       </template>
     </USelectMenu>

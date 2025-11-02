@@ -1,6 +1,6 @@
-<!-- filepath: e:\Repos\TimeHub\app\pages\time-entries.vue -->
 <script setup lang="ts">
 import type { Range } from "~/types";
+import type { PlanioTimeEntry } from "#shared/schemas/planio/time-entry";
 import { subDays } from "date-fns";
 
 // ✅ Date range state
@@ -15,7 +15,7 @@ const {
   pending,
   error,
   refresh,
-} = useFetch("/api/planio/time-entries", {
+} = useFetch<PlanioTimeEntry[]>("/api/planio/time-entries", {
   query: computed(() => ({
     from: range.value.start.toISOString().split("T")[0],
     to: range.value.end.toISOString().split("T")[0],
@@ -55,47 +55,58 @@ const handleTimeEntrySuccess = () => {
 
             <!-- Loading State -->
             <div v-if="pending" class="flex items-center justify-center py-12">
-              <UIcon name="i-lucide-loader-2" class="size-8 animate-spin text-primary" />
+              <UIcon
+                name="i-lucide-loader-2"
+                class="size-8 animate-spin text-primary"
+              />
             </div>
 
             <!-- Error State -->
             <UCard v-else-if="error" color="error">
               <div class="text-center py-8">
-                <UIcon name="i-lucide-alert-circle" class="size-12 mx-auto mb-4 text-error" />
-                <h3 class="text-lg font-semibold mb-2">Failed to load time entries</h3>
-                <UButton
-                  label="Retry"
-                  variant="ghost"
-                  @click="refresh()"
+                <UIcon
+                  name="i-lucide-alert-circle"
+                  class="size-12 mx-auto mb-4 text-error"
                 />
+                <h3 class="text-lg font-semibold mb-2">
+                  Failed to load time entries
+                </h3>
+                <UButton label="Retry" variant="ghost" @click="refresh()" />
               </div>
             </UCard>
 
             <template v-else>
               <!-- Chart -->
-              <TimeEntriesTime :time-entries="timeEntries" />
+              <TimeEntriesChart :time-entries="timeEntries" />
 
               <!-- Form -->
               <TimeEntriesTimeEntryForm @success="handleTimeEntrySuccess" />
 
-              <!-- Entries List (Optional - for later) -->
+              <!-- Entries List -->
               <UCard v-if="timeEntries.length > 0">
                 <template #header>
                   <h3 class="text-lg font-semibold">Recent Entries</h3>
                 </template>
-                
+
                 <div class="divide-y divide-default">
                   <div
-                    v-for="entry in timeEntries.slice(0, 5)"
+                    v-for="entry in timeEntries.slice(0, 10)"
                     :key="entry.id"
                     class="py-3 flex items-center justify-between"
                   >
                     <div class="flex-1">
-                      <div class="font-medium">{{ entry.issue?.id }} - {{ entry.comments }}</div>
-                      <div class="text-sm text-muted">{{ entry.project?.name }}</div>
+                      <div class="font-medium">
+                        {{ entry.issue ? `#${entry.issue.id}` : "" }}
+                        {{ entry.comments }}
+                      </div>
+                      <div class="text-sm text-muted">
+                        {{ entry.project.name }}
+                      </div>
                     </div>
                     <div class="flex items-center gap-4">
-                      <span class="text-sm text-muted">{{ entry.spent_on }}</span>
+                      <span class="text-sm text-muted">{{
+                        entry.spent_on
+                      }}</span>
                       <span class="font-semibold">{{ entry.hours }}h</span>
                     </div>
                   </div>

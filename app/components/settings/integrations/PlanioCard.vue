@@ -4,7 +4,7 @@
 </script>
 
 <template>
-  <UPageCard>
+  <UPageCard class="">
     <template #icon>
       <UIcon name="i-lucide-briefcase" class="size-8" />
     </template>

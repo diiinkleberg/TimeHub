@@ -3,8 +3,14 @@
 </script>
 
 <template>
-    <UContainer>
-      <SettingsIntegrationsPlanioCard />
-      <SettingsIntegrationsLinkGithubCard />
-    </UContainer>
+  <UPage>
+    <UPageBody>
+      <UContainer>
+        <UPageGrid :columns="2">
+          <SettingsIntegrationsPlanioCard />
+          <SettingsIntegrationsLinkGithubCard />
+        </UPageGrid>
+      </UContainer>
+    </UPageBody>
+  </UPage>
 </template>

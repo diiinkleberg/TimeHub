@@ -11,16 +11,6 @@ const { user, signOut } = await useAuth()
 const preferencesStore = usePreferencesStore()
 const colorMode = useColorMode()
 
-/**
- * Dropdown menu items with chip display
- *
- * How chips work in DropdownMenu:
- * 1. Add `slot: 'chip'` to menu item
- * 2. Add `chip: 'colorName'` to provide the color
- * 3. Use `#item-leading` slot to render the colored dot
- *
- * The chip property is accessible via (item as any).chip in the slot
- */
 const items = computed<DropdownMenuItem[][]>(() => [
   [
     {
@@ -48,8 +38,6 @@ const items = computed<DropdownMenuItem[][]>(() => [
           },
           children: THEME_COLORS.map(color => ({
             label: color,
-            chip: color, // ✅ Color name for CSS variables
-            slot: 'chip', // ✅ Enable chip rendering for this item
             checked: preferencesStore.primaryColor === color,
             type: 'checkbox',
             onSelect: (e) => {
@@ -71,8 +59,6 @@ const items = computed<DropdownMenuItem[][]>(() => [
           },
           children: NEUTRAL_COLORS.map(color => ({
             label: color,
-            chip: color === 'neutral' ? 'old-neutral' : color,
-            slot: 'chip', // ✅ Enable chip rendering
             type: 'checkbox',
             checked: preferencesStore.neutralColor === color,
             onSelect: (e) => {

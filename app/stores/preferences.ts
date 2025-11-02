@@ -1,45 +1,45 @@
-// stores/preferences.ts
-import { defineStore } from 'pinia'
+import { defineStore } from "pinia";
+import { whenever } from "@vueuse/core";
 
 /**
  * Available color palettes
  * Centralized to ensure consistency across the app
  */
 export const THEME_COLORS = [
-  'red',
-  'orange',
-  'amber',
-  'yellow',
-  'lime',
-  'green',
-  'emerald',
-  'teal',
-  'cyan',
-  'sky',
-  'blue',
-  'indigo',
-  'violet',
-  'purple',
-  'fuchsia',
-  'pink',
-  'rose'
-] as const
+  "red",
+  "orange",
+  "amber",
+  "yellow",
+  "lime",
+  "green",
+  "emerald",
+  "teal",
+  "cyan",
+  "sky",
+  "blue",
+  "indigo",
+  "violet",
+  "purple",
+  "fuchsia",
+  "pink",
+  "rose",
+] as const;
 
 export const NEUTRAL_COLORS = [
-  'slate',
-  'gray',
-  'zinc',
-  'neutral',
-  'stone'
-] as const
+  "slate",
+  "gray",
+  "zinc",
+  "neutral",
+  "stone",
+] as const;
 
-export type ThemeColor = (typeof THEME_COLORS)[number]
-export type NeutralColor = (typeof NEUTRAL_COLORS)[number]
+export type ThemeColor = (typeof THEME_COLORS)[number];
+export type NeutralColor = (typeof NEUTRAL_COLORS)[number];
 
 /**
  * Preferences Store
  *
- * Manages user theme preferences with automatic cookie persistence.
+ * Manages user theme preferences and cookie consent with automatic persistence.
  *
  * Why Pinia Store?
  * ✅ Global singleton - One instance shared across entire app
@@ -61,6 +61,16 @@ export type NeutralColor = (typeof NEUTRAL_COLORS)[number]
  * 3. Actions update both store (persistence) and appConfig (UI)
  * 4. Changes are reactive across all components
  *
+ * Cookies Used (All First-Party):
+ * 1. preferences - Theme colors & consent (this store)
+ * 2. th.session - Auth session token (Better Auth)
+ * 3. th.session.token - Session JWT (Better Auth)
+ *
+ * No Third-Party Cookies:
+ * ❌ DiceBear avatars are URL-based (no cookies)
+ * ❌ No analytics/tracking cookies
+ * ❌ No advertising cookies
+ *
  * Persistence (via pinia-plugin-persistedstate/nuxt):
  * ✅ cookies as storage (SSR-friendly)
  * ✅ store.$id as cookie name ("preferences")
@@ -68,71 +78,101 @@ export type NeutralColor = (typeof NEUTRAL_COLORS)[number]
  * ✅ Whole state persisted automatically
  * ✅ Survives logout (separate from auth session)
  */
-export const usePreferencesStore = defineStore('preferences', {
-  state: () => ({
+export const usePreferencesStore = defineStore(
+  "preferences",
+  () => {
+    // ===== State =====
+
     /**
      * Primary theme color
      * Default: green (matches Nuxt UI default)
      */
-    primaryColor: 'green' as ThemeColor,
+    const primaryColor = ref<ThemeColor>("green");
 
     /**
      * Neutral theme color
      * Default: slate
      */
-    neutralColor: 'slate' as NeutralColor
-  }),
+    const neutralColor = ref<NeutralColor>("slate");
 
-  getters: {
+    /**
+     * Cookie consent status
+     * null = not asked yet (show banner)
+     * true = accepted
+     * false = declined (but we still need essential cookies for auth)
+     */
+    const cookieConsent = ref<boolean | null>(null);
+
+    /**
+     * Timestamp when consent was given/declined
+     */
+    const cookieConsentDate = ref<string | null>(null);
+
+    // ===== Getters =====
+
     /**
      * Check if using default theme colors
      */
-    isDefaultTheme: state =>
-      state.primaryColor === 'green' && state.neutralColor === 'slate'
-  },
+    const isDefaultTheme = computed(
+      () => primaryColor.value === "green" && neutralColor.value === "slate",
+    );
 
-  actions: {
+    /**
+     * Check if we should show the cookie banner
+     */
+    const shouldShowCookieBanner = computed(() => cookieConsent.value === null);
+
+    /**
+     * Check if cookies are accepted
+     */
+    const areCookiesAccepted = computed(() => cookieConsent.value === true);
+
+    // ===== Actions =====
+
+    const appConfig = useAppConfig();
+
     /**
      * Update primary color
      * Updates both store (persisted) and appConfig (runtime UI)
      *
-     * Why sync with appConfig?
-     * - Nuxt UI reads colors from appConfig at runtime
-     * - Direct appConfig update = immediate visual change
-     * - Store update = persistence across sessions
-     *
      * @param color - Color from THEME_COLORS palette
      */
-    setPrimaryColor(color: ThemeColor) {
-      this.primaryColor = color
-
-      // ✅ Sync with Nuxt UI for immediate visual update
-      const appConfig = useAppConfig()
-      appConfig.ui.colors.primary = color
-    },
+    function setPrimaryColor(color: ThemeColor) {
+      primaryColor.value = color;
+    }
 
     /**
      * Update neutral color
-     * Same strategy as primary color
-     *
      * @param color - Color from NEUTRAL_COLORS palette
      */
-    setNeutralColor(color: NeutralColor) {
-      this.neutralColor = color
-
-      // ✅ Sync with Nuxt UI for immediate visual update
-      const appConfig = useAppConfig()
-      appConfig.ui.colors.neutral = color
-    },
+    function setNeutralColor(color: NeutralColor) {
+      neutralColor.value = color;
+    }
 
     /**
      * Reset all colors to defaults
      * Useful for "Reset Theme" button
      */
-    resetColors() {
-      this.setPrimaryColor('green')
-      this.setNeutralColor('slate')
-    },
+    function resetColors() {
+      setPrimaryColor("green");
+      setNeutralColor("slate");
+    }
+
+    /**
+     * Accept cookie usage
+     */
+    function acceptCookies() {
+      cookieConsent.value = true;
+      cookieConsentDate.value = new Date().toISOString();
+    }
+
+    /**
+     * Reset cookie consent (for testing or user request)
+     */
+    function resetCookieConsent() {
+      cookieConsent.value = null;
+      cookieConsentDate.value = null;
+    }
 
     /**
      * Initialize Nuxt UI appConfig from persisted store values
@@ -144,26 +184,63 @@ export const usePreferencesStore = defineStore('preferences', {
      * 2. But Nuxt UI appConfig doesn't know about store
      * 3. This syncs persisted colors → appConfig → UI
      * 4. Prevents flash of default colors (FOUC)
-     *
-     * Flow:
-     * App loads → Pinia loads from cookie → this syncs → UI renders correctly
      */
-    initializeAppConfig() {
-      const appConfig = useAppConfig()
-      appConfig.ui.colors.primary = this.primaryColor
-      appConfig.ui.colors.neutral = this.neutralColor
+    function initializeAppConfig() {
+      appConfig.ui.colors.primary = primaryColor.value;
+      appConfig.ui.colors.neutral = neutralColor.value;
     }
-  },
 
-  /**
-   * Enable automatic cookie persistence
-   *
-   * With Nuxt module, persist: true is enough!
-   * Defaults from pinia-plugin-persistedstate/nuxt:
-   * - Storage: cookies (SSR-safe)
-   * - Key: store.$id ("preferences")
-   * - Serializer: JSON.stringify/destr
-   * - Cookie options: Secure defaults
-   */
-  persist: true
-})
+    // ===== Watchers (VueUse) =====
+
+    /**
+     * Auto-sync primary color to appConfig
+     * Triggers whenever primaryColor changes
+     */
+    whenever(
+      () => primaryColor.value,
+      (color) => {
+        appConfig.ui.colors.primary = color;
+      },
+    );
+
+    /**
+     * Auto-sync neutral color to appConfig
+     * Triggers whenever neutralColor changes
+     */
+    whenever(
+      () => neutralColor.value,
+      (color) => {
+        appConfig.ui.colors.neutral = color;
+      },
+    );
+
+    // ===== Return =====
+
+    return {
+      // State
+      primaryColor,
+      neutralColor,
+      cookieConsent,
+      cookieConsentDate,
+
+      // Getters
+      isDefaultTheme,
+      shouldShowCookieBanner,
+      areCookiesAccepted,
+
+      // Actions
+      setPrimaryColor,
+      setNeutralColor,
+      resetColors,
+      acceptCookies,
+      resetCookieConsent,
+      initializeAppConfig,
+    };
+  },
+  {
+    /**
+     * Enable automatic cookie persistence
+     */
+    persist: true,
+  },
+);

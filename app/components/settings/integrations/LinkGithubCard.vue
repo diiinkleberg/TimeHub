@@ -1,7 +1,6 @@
 <script setup lang="ts">;
 
 const { linkGithubAccount, unlinkGithubAccount, listAccounts } = await useAuth();
-const route = useRoute();
 
 const accounts = ref<Array<any>>([]);
 const isLoading = ref(true);

@@ -6,7 +6,7 @@ import { z } from "zod";
 export const PlanioCustomFieldSchema = z.object({
   id: z.number(),
   name: z.string(),
-  value: z.string(),
+  value: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]).optional(),
 });
 
 /**
@@ -31,9 +31,10 @@ export const PlanioTimeEntrySchema = z.object({
   }),
   hours: z.number(),
   comments: z.string(),
-  spent_on: z.iso.date(),
-  custom_fields: z.array(PlanioCustomFieldSchema),
-});
+  spent_on: z.iso.date(), // YYYY-MM-DD format
+  created_on: z.iso.date(),
+  custom_fields: z.array(PlanioCustomFieldSchema).optional().default([]),
+}).loose();
 
 /**
  * Planio time entries list response

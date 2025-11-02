@@ -15,7 +15,7 @@ const config = {
   authPlanioClientId: process.env.AUTH_PLANIO_CLIENT_ID || "",
   authPlanioClientSecret: process.env.AUTH_PLANIO_CLIENT_SECRET || "",
   authPlanioBaseUrl: process.env.AUTH_PLANIO_BASE_URL || "",
-  authPlanioScopes: process.env.AUTH_PLANIO_SCOPES || "read",
+  authPlanioScopes: process.env.AUTH_PLANIO_SCOPES || "view_issues,view_time_entries",
   public: {
     nodeEnv: process.env.NODE_ENV || "development",
   },
@@ -27,7 +27,7 @@ export const auth = betterAuth({
   }),
 
   account: {
-    encryptOAuthTokens: true,
+    encryptOAuthTokens: false,
     accountLinking: {
       enabled: true,
       trustedProviders: ["github", "planio"],

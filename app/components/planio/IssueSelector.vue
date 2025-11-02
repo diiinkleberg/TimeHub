@@ -1,52 +1,36 @@
 <script setup lang="ts">
 import type { PlanioIssue } from "#shared/schemas/planio/issue";
+import { whenever } from "@vueuse/core";
 
 interface Props {
   modelValue?: PlanioIssue | null;
   projectId?: number | null;
 }
 
-interface Emits {
-  (e: "update:modelValue", value: PlanioIssue | null): void;
-  (e: "issueSelected", issue: PlanioIssue): void;
-}
-
 const props = withDefaults(defineProps<Props>(), {
   modelValue: null,
   projectId: null,
 });
-const emit = defineEmits<Emits>();
+const emit = defineEmits<{
+  "update:modelValue": [value: PlanioIssue | null];
+  "issueSelected": [issue: PlanioIssue];
+}>();
 
-// ✅ Get auth state
-const { user } = await useAuth();
-
-// ✅ Fetch issues
-const {
-  data: issues,
-  pending,
-  error,
-  refresh,
-} = useFetch<PlanioIssue[]>("/api/planio/issues", {
-  server: false,
-  lazy: true,
-  default: () => [],
-  query: computed(() => ({
-    ...(props.projectId && { project_id: props.projectId }),
-  })),
-  watch: [() => props.projectId],
-  immediate: false,
-});
-
-// ✅ Wait for Nuxt hydration to complete, then fetch
-const nuxtApp = useNuxtApp();
-
-nuxtApp.hooks.hookOnce('app:suspense:resolve', () => {
-  // This runs AFTER all hydration is complete
-  if (user.value) {
-    refresh();
+// ✅ Fetch issues with project filter
+const { data: issues, pending, error } = useFetch<PlanioIssue[]>
+(
+  "/api/planio/issues",
+  {
+    server: false,
+    default: () => [],
+    query: computed(() => ({
+      ...(props.projectId && { project_id: props.projectId }),
+    })),
+    watch: [() => props.projectId],
   }
-});
+);
 
+// ✅ Transform for select menu
 const issueItems = computed(() =>
   issues.value.map((issue) => ({
     label: issue.subject,
@@ -56,44 +40,40 @@ const issueItems = computed(() =>
   })),
 );
 
+// ✅ Find selected item
 const selectedItem = computed(() =>
   props.modelValue
     ? issueItems.value.find((item) => item.value === props.modelValue!.id)
-    : undefined,
+    : null
 );
 
-const handleSelection = (
-  selectedItem?: {
-    label: string;
-    value: number;
-    issue: PlanioIssue;
-  } | null,
-) => {
-  if (!selectedItem) {
+// ✅ Handle selection
+const handleSelection = (item: typeof issueItems.value[0] | null) => {
+  if (item?.issue) {
+    emit("update:modelValue", item.issue);
+    emit("issueSelected", item.issue);
+  } else {
     emit("update:modelValue", null);
-    return;
   }
-
-  const issue = selectedItem.issue;
-  emit("update:modelValue", issue);
-  emit("issueSelected", issue);
 };
 
-// ✅ Clear selection when project filter changes
-watch(
+// ✅ Clear selection when project changes
+whenever(
   () => props.projectId,
   () => {
-    if (props.modelValue && props.projectId) {
-      if (props.modelValue.project.id !== props.projectId) {
-        emit("update:modelValue", null);
-      }
+    if (props.modelValue && props.projectId !== props.modelValue.project.id) {
+      emit("update:modelValue", null);
     }
-  },
+  }
 );
 </script>
 
 <template>
-  <UFormField label="Issue">
+  <div class="space-y-2">
+    <label class="block text-sm font-medium text-highlighted">
+      Select Issue
+    </label>
+
     <div
       v-if="!projectId && !pending && issues.length === 0"
       class="text-sm text-muted px-3 py-2 mb-2"
@@ -103,32 +83,41 @@ watch(
 
     <div
       v-if="pending"
-      class="flex items-center gap-2 px-3 py-2 text-sm text-muted"
+      class="flex items-center gap-3 px-4 py-3 w-full h-12 bg-elevated border border-default rounded-lg"
     >
-      <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
-      <span>Loading issues...</span>
+      <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin text-accent" />
+      <span class="text-sm text-muted font-medium">Loading issues...</span>
     </div>
 
-    <div v-else-if="error" class="text-sm text-red-500">
+    <div
+      v-else-if="error"
+      class="text-sm text-red-400 bg-red-900/20 p-2 rounded border border-red-800"
+    >
       Failed to load issues
-      <UButton size="xs" variant="ghost" label="Retry" @click="refresh()" />
     </div>
 
     <USelectMenu
       v-else
       :model-value="selectedItem"
       :items="issueItems"
-      :placeholder="
-        projectId ? 'Search issues in project...' : 'Search all your issues...'
-      "
+      :placeholder="projectId ? 'Search issues in project...' : 'Search all your issues...'"
       leading-icon="i-lucide-circle-dot"
       searchable
-      clearable
+      class="w-full h-10"
+      :ui="{
+        base: selectedItem ? 'bg-elevated border-primary text-primary font-bold' : 'bg-elevated border-default text-default',
+        leadingIcon: selectedItem ? 'text-primary' : 'text-muted',
+        placeholder: 'text-muted',
+        content: 'bg-elevated border-default shadow-xl',
+        viewport: 'p-1',
+        item: 'text-default hover:bg-muted data-[highlighted]:bg-accented data-[highlighted]:text-highlighted rounded-md px-3 py-2',
+        input: 'bg-elevated text-default placeholder:text-muted p-0.5'
+      }"
       @update:model-value="handleSelection"
     >
       <template #item-label="{ item }">
         <div class="flex flex-col gap-0.5">
-          <span class="font-medium">{{ item.label }}</span>
+          <span class="font-medium text-default">{{ item.label }}</span>
           <span class="text-xs text-muted">{{ item.description }}</span>
         </div>
       </template>
@@ -137,14 +126,10 @@ watch(
         <div class="text-center py-6 text-muted">
           <UIcon name="i-lucide-inbox" class="size-8 mx-auto mb-2 opacity-50" />
           <p class="text-sm">
-            {{
-              projectId
-                ? "No issues found in this project"
-                : "No open issues assigned to you"
-            }}
+            {{ projectId ? "No issues found in this project" : "No open issues assigned to you" }}
           </p>
         </div>
       </template>
     </USelectMenu>
-  </UFormField>
+  </div>
 </template>

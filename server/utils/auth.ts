@@ -1,5 +1,5 @@
 import { auth } from "~~/server/lib/auth.config";
-import { toWebRequest, type H3Event } from "h3";
+import { toWebRequest, H3Event } from "h3";
 import prisma from "../lib/db/prisma";
 
 /**
@@ -14,10 +14,8 @@ export async function getUserAccessToken(
   event: H3Event,
   providerId: string,
 ): Promise<string> {
-  // ✅ Use toWebRequest() - recommended by Better Auth for Nuxt
   const request = toWebRequest(event);
   
-  // ✅ Pass request.headers which is a proper Headers object
   const session = await auth.api.getSession({
     headers: request.headers,
   });
@@ -28,8 +26,6 @@ export async function getUserAccessToken(
       message: "Session not found. Please sign in again.",
     });
   }
-
-  console.log("✅ Session found for user:", session.user.id);
 
   // Get account for provider
   const account = await prisma.account.findFirst({
@@ -45,8 +41,6 @@ export async function getUserAccessToken(
       message: `No ${providerId} account linked`,
     });
   }
-
-  console.log(`✅ Access token retrieved for ${providerId}:`, account.accessToken.substring(0, 10) + '...');
 
   return account.accessToken;
 }

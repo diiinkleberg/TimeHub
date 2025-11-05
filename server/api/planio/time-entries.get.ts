@@ -2,15 +2,13 @@ import { PlanioTimeEntriesResponseSchema } from "#shared/schemas/planio/time-ent
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
-  const { from, to, project_id, issue_id } = query;
+  const { from, to, project_id, issue_id, limit } = query;
+  const sort = (query.sort as string) || "spent_on:desc";
 
   const config = useRuntimeConfig();
   const baseUrl = config.authPlanioBaseUrl;
 
-  // ✅ Debug: Log what we're getting
   const accessToken = await getUserAccessToken(event, "planio");
-  console.log("🔑 Access Token:", accessToken ? `${accessToken.substring(0, 10)}...` : "MISSING");
-
   try {
     const response = await $fetch(`${baseUrl}/time_entries.json`, {
       headers: {
@@ -22,7 +20,8 @@ export default defineEventHandler(async (event) => {
         ...(to && { to: to as string }),
         ...(project_id && { project_id: project_id as string }),
         ...(issue_id && { issue_id: issue_id as string }),
-        limit: 100,
+        ...(limit && { limit: limit as number}),
+        sort,
       },
     });
 

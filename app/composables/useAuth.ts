@@ -22,7 +22,7 @@ export const useAuth = async () => {
     linkGithubAccount: async () =>
       await authClient.linkSocial({
         provider: "github",
-        callbackURL: "/settings/integrations",
+        callbackURL: "/settings",
         errorCallbackURL: "/error",
       }),
 

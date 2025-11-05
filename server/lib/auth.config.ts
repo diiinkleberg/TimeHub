@@ -113,7 +113,7 @@ export const auth = betterAuth({
                 email: planioUser.mail,
                 emailVerified: true,
                 image: `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(
-                  planioUser.name,
+                  planioUser.name.slice(0, 3),
                 )}&backgroundColor=0ea5e9,6366f1`,
 
                 // Custom fields

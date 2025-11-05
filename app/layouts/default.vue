@@ -2,16 +2,6 @@
 import type { NavigationMenuItem } from "@nuxt/ui";
 
 const open = ref(false);
-const route = useRoute();
-
-const routeTitle = computed(() => {
-  const currentRoute =
-    route.path.split("/").findLast((segment) => segment.length > 0) || "Dashboard";
-    return currentRoute
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-});
 
 const links = [
   {
@@ -42,26 +32,24 @@ const links = [
     label: "Settings",
     to: "/settings",
     icon: "i-lucide-settings",
-    defaultOpen: true,
-    type: "trigger",
-    children: [
-      {
-        label: "General",
-        to: "/settings/general",
-        exact: true,
-        onSelect: () => {
-          open.value = false;
-        },
-      },
-      {
-        label: "Integrations",
-        to: "/settings/integrations",
-        exact: true,
-        onSelect: () => {
-          open.value = false;
-        },
-      },
-    ],
+    // children: [
+    //   {
+    //     label: "General",
+    //     to: "/settings/general",
+    //     exact: true,
+    //     onSelect: () => {
+    //       open.value = false;
+    //     },
+    //   },
+    //   {
+    //     label: "Integrations",
+    //     to: "/settings/integrations",
+    //     exact: true,
+    //     onSelect: () => {
+    //       open.value = false;
+    //     },
+    //   },
+    // ],
   },
 ] satisfies NavigationMenuItem[];
 
@@ -84,8 +72,13 @@ const groups = computed(() => [
       class="bg-elevated/25"
       :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
-      <template #header>
-        <h1 class="text-xl font-bold">TimeHub</h1>
+      <template #header="{ collapsed }">
+        <div v-if="!collapsed" class="p-4">
+          <h1 class="text-xl font-bold">TimeHub</h1>
+        </div>
+        <div v-else class="p-4 text-center">
+          <span class="text-xl font-bold">TH</span>
+        </div>
       </template>
 
       <template #default="{ collapsed }">
@@ -107,16 +100,8 @@ const groups = computed(() => [
       </template>
     </UDashboardSidebar>
 
-    <div class="flex-1 flex flex-col w-0">
-      <UDashboardNavbar :title="routeTitle">
-        <template #leading>
-          <UDashboardSidebarCollapse />
-        </template>
-      </UDashboardNavbar>
+    <UDashboardSearch :groups="groups" />
 
-      <UDashboardSearch :groups="groups" />
-
-      <slot />
-    </div>
+    <slot />
   </UDashboardGroup>
 </template>

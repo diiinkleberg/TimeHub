@@ -1,5 +1,3 @@
-import { prerender } from "process";
-
 export default defineNuxtConfig({
   modules: [
     "@nuxt/eslint",
@@ -43,10 +41,12 @@ export default defineNuxtConfig({
     authPlanioClientId: process.env.AUTH_PLANIO_CLIENT_ID,
     authPlanioClientSecret: process.env.AUTH_PLANIO_CLIENT_SECRET,
     authPlanioScopes: process.env.AUTH_PLANIO_SCOPES,
+    openaiApiKey: process.env.OPENAI_API_KEY,
 
     public: {
       appName: process.env.APP_NAME || "TimeHub",
       betterAuthUrl: process.env.BETTER_AUTH_URL,
+      planioBaseUrl: process.env.AUTH_PLANIO_BASE_URL,
       nodeEnv: process.env.NODE_ENV,
     },
   },

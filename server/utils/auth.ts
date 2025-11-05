@@ -1,5 +1,5 @@
 import { auth } from "~~/server/lib/auth.config";
-import { toWebRequest, H3Event } from "h3";
+import { toWebRequest, type H3Event } from "h3";
 import prisma from "../lib/db/prisma";
 
 /**

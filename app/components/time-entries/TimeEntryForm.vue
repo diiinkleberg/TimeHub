@@ -11,9 +11,12 @@ const emit = defineEmits<Emits>();
 
 const selectedProject = ref<PlanioProject | null>(null);
 const selectedIssue = ref<PlanioIssue | null>(null);
-const hours = ref<number>(1);
+const hours = ref("1:00"); // Changed to string for HH:MM format
 const comments = ref("");
 const isEnhancing = ref(false);
+
+// Flag to prevent project filter reload when setting from issue
+const isSettingFromIssue = ref(false);
 
 // Use shallowRef for CalendarDate (official Nuxt UI pattern)
 const now = new Date();
@@ -24,6 +27,7 @@ const spentOn = shallowRef(
 // Watch for issue selection and automatically set the project
 watch(selectedIssue, (newIssue) => {
   if (newIssue?.project) {
+    isSettingFromIssue.value = true; // Set flag
     const issueProject = newIssue.project;
     selectedProject.value = {
       id: issueProject.id,
@@ -33,14 +37,26 @@ watch(selectedIssue, (newIssue) => {
       created_on: new Date().toISOString(),
       updated_on: new Date().toISOString(),
     } as PlanioProject;
+
+    // Reset flag after a tick
+    nextTick(() => {
+      isSettingFromIssue.value = false;
+    });
   }
 });
 
+// Convert HH:MM to decimal hours
+const hoursToDecimal = (timeStr: string): number => {
+  const [hours = 0, minutes = 0] = timeStr.split(":").map(Number);
+  return hours + minutes / 60;
+};
+
+// Validation
 const isValid = computed(() => {
   return (
     selectedIssue.value &&
-    hours.value > 0 &&
-    hours.value <= 12 &&
+    hoursToDecimal(hours.value) > 0 &&
+    hoursToDecimal(hours.value) <= 12 &&
     comments.value.trim().length > 0 &&
     spentOn.value
   );
@@ -55,14 +71,13 @@ const handleSubmit = async () => {
   submitting.value = true;
 
   try {
-    // Convert CalendarDate to YYYY-MM-DD string for API
     const formattedDate = `${spentOn.value.year}-${String(spentOn.value.month).padStart(2, "0")}-${String(spentOn.value.day).padStart(2, "0")}`;
 
     await $fetch("/api/planio/time-entries", {
       method: "POST",
       body: {
         issue_id: selectedIssue.value!.id,
-        hours: hours.value,
+        hours: hoursToDecimal(hours.value),
         comments: comments.value,
         spent_on: formattedDate,
       },
@@ -77,7 +92,7 @@ const handleSubmit = async () => {
     // Reset form
     selectedProject.value = null;
     selectedIssue.value = null;
-    hours.value = 1;
+    hours.value = "1:00";
     comments.value = "";
     const resetDate = new Date();
     spentOn.value = new CalendarDate(
@@ -110,32 +125,20 @@ const handleSubmit = async () => {
     </template>
 
     <form @submit.prevent="handleSubmit" class="space-y-4">
-      <!-- Project & Issue Selectors (side by side) -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <PlanioProjectSelector v-model="selectedProject" />
         <PlanioIssueSelector
           v-model="selectedIssue"
           :project-id="selectedProject?.id"
+          :skip-reload="isSettingFromIssue"
         />
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TimeEntriesDatePicker v-model="spentOn" />
 
-        <UFormField label="Hours" required>
-          <UInput
-            v-model.number="hours"
-            type="number"
-            step="0.25"
-            min="0.25"
-            max="12"
-            icon="i-lucide-clock"
-            placeholder="1.5"
-          />
-          <template #hint>
-            <span class="text-xs text-muted"> e.g., 1.5 for 1h 30min </span>
-          </template>
-        </UFormField>
+        <!-- Hours Input Component -->
+        <TimeEntriesHoursInput v-model="hours" :issue="selectedIssue" />
       </div>
 
       <!-- Description Editor with AI Enhancement -->
@@ -150,7 +153,7 @@ const handleSubmit = async () => {
         label="Log Time Entry"
         icon="i-lucide-check"
         :loading="submitting"
-        :disabled="submitting || isEnhancing"
+        :disabled="!isValid || submitting || isEnhancing"
         size="lg"
         block
       />

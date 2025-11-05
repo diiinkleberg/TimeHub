@@ -25,6 +25,8 @@ export default defineEventHandler(async (event) => {
       },
     });
 
+    console.log(query)
+
     const validatedData = PlanioTimeEntriesResponseSchema.parse(response);
     return validatedData.time_entries;
   } catch (error: any) {

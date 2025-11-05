@@ -1,12 +1,20 @@
 <script setup lang="ts">
-import type { PlanioProject } from "#shared/schemas/planio/project";
-import type { PlanioIssue } from "#shared/schemas/planio/issue";
+import {
+  startOfWeek,
+  endOfWeek,
+  today,
+  getLocalTimeZone,
+} from "@internationalized/date";
+import type { Range } from "~/types";
 
 const { user } = await useAuth();
 
-// State
-const selectedProject = ref<PlanioProject | null>(null);
-const selectedIssue = ref<PlanioIssue | null>(null);
+const dateRange = ref<Range>({
+  start: startOfWeek(today(getLocalTimeZone()), "en-US").toDate(
+    getLocalTimeZone(),
+  ),
+  end: endOfWeek(today(getLocalTimeZone()), "en-US").toDate(getLocalTimeZone()),
+});
 </script>
 
 <template>
@@ -20,7 +28,13 @@ const selectedIssue = ref<PlanioIssue | null>(null);
     </template>
 
     <template #body>
-      
+      <div class="p-6 space-y-6">
+        <!-- Date Range Picker -->
+        <DashboardDateRangePicker v-model="dateRange" />
+
+        <!-- Chart -->
+        <DashboardTimeEntriesChart :date-range="dateRange" />
+      </div>
     </template>
   </UDashboardPanel>
 </template>

@@ -51,7 +51,13 @@ const quickHours = [
   { label: "8h", value: "8:00" },
 ];
 
-// Time tracking info
+// Convert HH:MM to decimal hours
+const hoursToDecimal = (timeStr: string): number => {
+  const [hours = 0, minutes = 0] = timeStr.split(":").map(Number);
+  return hours + minutes / 60;
+};
+
+// Time tracking info - now reactive to current input
 const timeInfo = computed(() => {
   if (!props.issue) return null;
 
@@ -60,15 +66,25 @@ const timeInfo = computed(() => {
 
   if (!estimated) return null;
 
-  const remaining = Math.max(0, estimated - spent);
-  const percentage = Math.min(100, (spent / estimated) * 100);
-  const isOvertime = spent > estimated;
+  // Add current input to spent time for preview
+  const currentInputHours = hoursToDecimal(props.modelValue);
+  const projectedSpent = spent + currentInputHours;
+  
+  const remaining = Math.max(0, estimated - projectedSpent);
+  const isOvertime = projectedSpent > estimated;
+  
+  // Calculate percentage - ensure it's always a valid number
+  const actualPercentage = (projectedSpent / estimated) * 100;
+  const percentage = Math.min(100, actualPercentage);
 
   return {
     spent,
     estimated,
+    currentInput: currentInputHours,
+    projectedSpent,
     remaining,
-    percentage,
+    percentage: isNaN(percentage) ? 0 : percentage, // Prevent NaN
+    actualPercentage: isNaN(actualPercentage) ? 0 : actualPercentage,
     isOvertime,
   };
 });
@@ -85,7 +101,7 @@ const formatDecimalHours = (decimal: number) => {
   <UFormField label="Hours" required>
     <div class="space-y-3">
       <!-- Time Input with Ticker -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 max-w-xs">
         <UButton
           icon="i-lucide-minus"
           size="sm"
@@ -100,7 +116,7 @@ const formatDecimalHours = (decimal: number) => {
           pattern="[0-9]{1,2}:[0-5][0-9]"
           placeholder="1:00"
           icon="i-lucide-clock"
-          class="flex-1 text-center font-mono text-lg"
+          class="flex-1 text-center font-mono text-lg w-28"
         />
 
         <UButton
@@ -128,47 +144,76 @@ const formatDecimalHours = (decimal: number) => {
       <!-- Time Tracking Progress (if issue selected with estimates) -->
       <div
         v-if="timeInfo"
-        class="p-3 bg-elevated border border-default rounded-lg space-y-2"
+        class="p-4 bg-elevated border border-default rounded-lg space-y-3"
       >
         <div class="flex items-center justify-between">
-          <span class="text-xs font-medium text-highlighted">Time Budget</span>
+          <span class="text-sm font-medium text-highlighted">Time Budget</span>
           <UBadge
             :label="timeInfo.isOvertime ? 'Over Budget' : 'On Track'"
             :color="timeInfo.isOvertime ? 'error' : 'success'"
-            size="xs"
+            size="sm"
           />
         </div>
 
-        <div class="grid grid-cols-3 gap-3 text-center">
-          <div>
-            <div class="text-xs text-muted mb-0.5">Spent</div>
-            <div class="text-sm font-semibold text-default font-mono">
-              {{ formatDecimalHours(timeInfo.spent) }}
+        <!-- Two-column layout: Stats on left, Preview on right -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Left: Current Stats -->
+          <div class="grid grid-cols-2 gap-3 text-center">
+            <div>
+              <div class="text-xs text-muted mb-1">Already Spent</div>
+              <div class="text-base font-semibold text-default font-mono">
+                {{ formatDecimalHours(timeInfo.spent) }}
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-muted mb-1">Estimated</div>
+              <div class="text-base font-semibold text-default font-mono">
+                {{ formatDecimalHours(timeInfo.estimated) }}
+              </div>
             </div>
           </div>
-          <div>
-            <div class="text-xs text-muted mb-0.5">Estimated</div>
-            <div class="text-sm font-semibold text-default font-mono">
-              {{ formatDecimalHours(timeInfo.estimated) }}
+
+          <!-- Right: After Logging Preview -->
+          <div class="grid grid-cols-2 gap-3 text-center md:border-l md:border-default md:pl-4">
+            <div>
+              <div class="text-xs text-primary mb-1">+ This Entry</div>
+              <div class="text-base font-semibold text-primary font-mono">
+                {{ formatDecimalHours(timeInfo.currentInput) }}
+              </div>
             </div>
-          </div>
-          <div>
-            <div class="text-xs text-muted mb-0.5">Remaining</div>
-            <div
-              class="text-sm font-semibold font-mono"
-              :class="timeInfo.isOvertime ? 'text-red-400' : 'text-default'"
-            >
-              {{ formatDecimalHours(timeInfo.remaining) }}
+            <div>
+              <div class="text-xs text-muted mb-1">Will Remain</div>
+              <div
+                class="text-base font-semibold font-mono"
+                :class="timeInfo.isOvertime ? 'text-red-400' : 'text-success'"
+              >
+                {{ formatDecimalHours(timeInfo.remaining) }}
+              </div>
             </div>
           </div>
         </div>
 
-        <UProgress
-          :value="timeInfo.percentage"
-          :max="100"
-          size="sm"
-          :color="timeInfo.isOvertime ? 'error' : 'primary'"
-        />
+        <!-- Progress Bar -->
+        <div class="space-y-1">
+          <UProgress
+            :model-value="timeInfo.percentage"
+            :max="100"
+            size="md"
+            :color="timeInfo.isOvertime ? 'error' : 'primary'"
+          />
+          
+          <!-- Percentage indicator -->
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-muted">
+              {{ formatDecimalHours(timeInfo.projectedSpent) }} / {{ formatDecimalHours(timeInfo.estimated) }}h
+            </span>
+            <span
+              :class="timeInfo.isOvertime ? 'text-red-400 font-semibold' : 'text-muted'"
+            >
+              {{ Math.round(timeInfo.actualPercentage) }}%
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </UFormField>

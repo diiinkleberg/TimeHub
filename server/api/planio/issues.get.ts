@@ -5,23 +5,40 @@ export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event);
     const projectId = query.project_id as string | undefined;
+    const issueIds = query.issue_id as string | undefined; // Can be comma-separated: "8,9,10"
+    const limit = query.limit as string | undefined;
 
     const config = useRuntimeConfig();
     const baseUrl = config.authPlanioBaseUrl;
 
     const accessToken = await getUserAccessToken(event, "planio");
 
-    console.log("Fetching issues with query:", { projectId });
+    console.log("Fetching issues with query:", { projectId, issueIds, limit });
+
+    // Build query parameters
+    const queryParams: Record<string, any> = {};
+
+    if (issueIds) {
+      // When filtering by specific issue IDs, don't apply other filters
+      queryParams.issue_id = issueIds;
+    } else {
+      // Only apply these filters when not fetching specific issues
+      queryParams.assigned_to = "me";
+      queryParams.status_id = "open";
+      if (projectId) {
+        queryParams.project_id = projectId;
+      }
+    }
+
+    if (limit) {
+      queryParams.limit = limit;
+    }
 
     const response = await $fetch(`${baseUrl}/issues.json`, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-      query: {
-        assigned_to: "me",
-        ...(projectId && { project_id: projectId }),
-        status_id: "open",
-      },
+      query: queryParams,
     });
 
     const validatedData = PlanioIssuesResponseSchema.parse(response);

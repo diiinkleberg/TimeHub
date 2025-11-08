@@ -23,6 +23,7 @@ export const PlanioTimeEntrySchema = z.looseObject({
   issue: z
     .looseObject({
       id: z.number(),
+      // Don't include subject - API doesn't provide it in time_entries
     })
     .optional(),
   user: z.looseObject({

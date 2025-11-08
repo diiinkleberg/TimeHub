@@ -20,13 +20,12 @@ export default defineEventHandler(async (event) => {
         ...(to && { to: to as string }),
         ...(project_id && { project_id: project_id as string }),
         ...(issue_id && { issue_id: issue_id as string }),
-        ...(limit && { limit: limit as number}),
+        ...(limit && { limit: limit as number }),
+        include: "issue", // 🎯 ADD THIS LINE!
         sort,
       },
     });
-
-    console.log(query)
-
+    
     const validatedData = PlanioTimeEntriesResponseSchema.parse(response);
     return validatedData.time_entries;
   } catch (error: any) {
@@ -36,10 +35,11 @@ export default defineEventHandler(async (event) => {
       message: error.message,
       data: error.data,
     });
-    
+
     throw createError({
       statusCode: error.status || 500,
-      message: error.data?.errors?.[0] || "Failed to fetch time entries from Planio",
+      message:
+        error.data?.errors?.[0] || "Failed to fetch time entries from Planio",
     });
   }
 });

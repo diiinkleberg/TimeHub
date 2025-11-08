@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { PlanioProject } from "#shared/schemas/planio/project";
 import type { PlanioIssue } from "#shared/schemas/planio/issue";
-import { CalendarDate, getLocalTimeZone } from "@internationalized/date";
+import type { SimpleProject } from "#shared/types/planio";
+import { CalendarDate } from "@internationalized/date";
 
 interface Emits {
   (e: "success"): void;
@@ -9,36 +9,53 @@ interface Emits {
 
 const emit = defineEmits<Emits>();
 
-const selectedProject = ref<PlanioProject | null>(null);
-const selectedIssue = ref<PlanioIssue | null>(null);
-const hours = ref("1:00"); // Changed to string for HH:MM format
-const comments = ref("");
-const isEnhancing = ref(false);
+// Use form store for persistence
+const formStore = useTimeEntryFormStore();
 
-// Flag to prevent project filter reload when setting from issue
+const selectedProject = ref<SimpleProject | null>(formStore.selectedProject);
+const selectedIssue = ref<PlanioIssue | null>(formStore.selectedIssue);
+const hours = ref(formStore.hours);
+const comments = ref(formStore.comments);
+const isEnhancing = ref(false);
 const isSettingFromIssue = ref(false);
 
-// Use shallowRef for CalendarDate (official Nuxt UI pattern)
-const now = new Date();
+// Initialize date from store or default to today
+formStore.initializeDefaults();
 const spentOn = shallowRef(
-  new CalendarDate(now.getFullYear(), now.getMonth() + 1, now.getDate()),
+  formStore.spentOn
+    ? new CalendarDate(
+        formStore.spentOn.year,
+        formStore.spentOn.month,
+        formStore.spentOn.day,
+      )
+    : new CalendarDate(
+        new Date().getFullYear(),
+        new Date().getMonth() + 1,
+        new Date().getDate(),
+      ),
 );
 
-// Watch for issue selection and automatically set the project
+// Sync form values to store
+watch(selectedProject, (value) => formStore.setProject(value));
+watch(selectedIssue, (value) => formStore.setIssue(value));
+watch(hours, (value) => formStore.setHours(value));
+watch(comments, (value) => formStore.setComments(value));
+watch(spentOn, (value) =>
+  formStore.setSpentOn({
+    year: value.year,
+    month: value.month,
+    day: value.day,
+  }),
+);
+
 watch(selectedIssue, (newIssue) => {
   if (newIssue?.project) {
-    isSettingFromIssue.value = true; // Set flag
-    const issueProject = newIssue.project;
+    isSettingFromIssue.value = true;
     selectedProject.value = {
-      id: issueProject.id,
-      name: issueProject.name,
-      identifier: `project-${issueProject.id}`,
-      description: "",
-      created_on: new Date().toISOString(),
-      updated_on: new Date().toISOString(),
-    } as PlanioProject;
+      id: newIssue.project.id,
+      name: newIssue.project.name,
+    } satisfies SimpleProject;
 
-    // Reset flag after a tick
     nextTick(() => {
       isSettingFromIssue.value = false;
     });
@@ -89,7 +106,8 @@ const handleSubmit = async () => {
       color: "success",
     });
 
-    // Reset form
+    // Reset form using store
+    formStore.resetForm();
     selectedProject.value = null;
     selectedIssue.value = null;
     hours.value = "1:00";
@@ -112,6 +130,26 @@ const handleSubmit = async () => {
   } finally {
     submitting.value = false;
   }
+};
+
+const handleReset = () => {
+  formStore.resetForm();
+  selectedProject.value = null;
+  selectedIssue.value = null;
+  hours.value = "1:00";
+  comments.value = "";
+  const resetDate = new Date();
+  spentOn.value = new CalendarDate(
+    resetDate.getFullYear(),
+    resetDate.getMonth() + 1,
+    resetDate.getDate(),
+  );
+
+  toast.add({
+    title: "Form reset",
+    description: "All fields have been cleared",
+    color: "neutral",
+  });
 };
 </script>
 
@@ -144,19 +182,43 @@ const handleSubmit = async () => {
       <!-- Description Editor with AI Enhancement -->
       <TimeEntriesDescriptionEditor
         v-model="comments"
+        :spent-on="new Date(spentOn.year, spentOn.month - 1, spentOn.day)"
         @enhancing="isEnhancing = $event"
       />
 
-      <!-- Submit Button -->
-      <UButton
-        type="submit"
-        label="Log Time Entry"
-        icon="i-lucide-check"
-        :loading="submitting"
-        :disabled="!isValid || submitting || isEnhancing"
-        size="lg"
-        block
-      />
+      <!-- Action Buttons -->
+      <div class="flex flex-col gap-2">
+        <UButton
+          type="submit"
+          label="Log Time Entry"
+          icon="i-lucide-check"
+          :loading="submitting"
+          :disabled="!isValid || submitting || isEnhancing"
+          size="lg"
+          block
+        />
+
+        <!-- Reset Button -->
+        <UButton
+          type="button"
+          label="Reset Form"
+          icon="i-lucide-rotate-ccw"
+          color="neutral"
+          variant="outline"
+          :disabled="submitting || isEnhancing || !formStore.isDirty"
+          size="md"
+          block
+          @click="handleReset"
+        />
+
+        <!-- Last Saved Indicator -->
+        <div
+          v-if="formStore.lastSaved"
+          class="text-xs text-center text-muted mt-1"
+        >
+          Last saved {{ useTimeAgo(formStore.lastSaved).value }}
+        </div>
+      </div>
     </form>
   </UCard>
 </template>

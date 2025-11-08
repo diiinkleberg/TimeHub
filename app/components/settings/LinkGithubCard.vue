@@ -101,7 +101,7 @@ onMounted(async () => {
       </template>
 
       <!-- Connected state -->
-      <template v-else-if="isGithubLinked">
+      <template v-else-if="isGithubLinked && !showUnlinkConfirm">
         <UAlert
           icon="i-lucide-check-circle"
           color="success"
@@ -123,7 +123,7 @@ onMounted(async () => {
       </template>
 
       <!-- Confirmation alert -->
-      <template v-else-if="showUnlinkConfirm">
+      <template v-if="showUnlinkConfirm">
         <UAlert
           icon="i-lucide-alert-triangle"
           color="error"

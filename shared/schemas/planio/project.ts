@@ -6,12 +6,12 @@ import { z } from "zod";
 export const PlanioProjectSchema = z.looseObject({
   id: z.number(),
   name: z.string(),
-  identifier: z.string(),
-  description: z.string().default(""),
+  identifier: z.string().optional(),
+  description: z.string().optional().default(""),
   status: z.number().optional(),
   is_public: z.boolean().optional(),
-  created_on: z.iso.datetime(),
-  updated_on: z.iso.datetime(),
+  created_on: z.iso.datetime().optional(),
+  updated_on: z.iso.datetime().optional(),
 });
 
 /**

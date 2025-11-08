@@ -43,42 +43,60 @@ const formatDate = (dateString: string) => {
         :key="entry.id"
         :to="getEditUrl(entry.id)"
         target="_blank"
-        class="flex items-center justify-between py-3 px-2 -mx-2 rounded-md hover:bg-elevated/50 transition-colors group"
+        class="flex items-center justify-between py-4 px-2 -mx-2 rounded-md hover:bg-elevated/50 transition-colors group"
       >
         <!-- Entry Details -->
         <div class="flex-1 min-w-0 flex items-start gap-3">
+          <!-- Entry ID Badge -->
           <UBadge
-            v-if="entry.issue"
             variant="soft"
             color="primary"
+            size="md"
             class="shrink-0 mt-0.5"
           >
-            #{{ entry.issue.id }}
+            #{{ entry.id }}
           </UBadge>
 
-          <div class="flex-1 min-w-0">
+          <div class="flex-1 min-w-0 space-y-1.5">
+            <!-- Description/Comments as main title -->
             <div
-              class="font-medium text-default truncate group-hover:text-primary transition-colors"
+              class="font-medium text-base text-default group-hover:text-primary transition-colors line-clamp-2"
             >
               {{ entry.comments || "No description" }}
             </div>
-            <div class="flex items-center gap-2 mt-1 text-sm text-muted">
-              <UIcon name="i-lucide-briefcase" class="size-3.5" />
-              <span class="truncate">{{ entry.project.name }}</span>
-              <span class="text-muted/50">•</span>
-              <UIcon name="i-lucide-calendar" class="size-3.5" />
-              <span>{{ formatDate(entry.spent_on) }}</span>
+
+            <!-- Issue Name & Project Info -->
+            <div class="flex flex-col gap-1 text-sm">
+              <!-- Issue Name (if available) -->
+              <div
+                v-if="entry.issue"
+                class="flex items-center gap-1.5 text-muted"
+              >
+                <UIcon name="i-lucide-circle-dot" class="size-3.5" />
+                <span class="truncate font-medium">
+                  Issue: {{ entry.issue.subject || `#${entry.issue.id}` }}
+                </span>
+              </div>
+
+              <!-- Project & Date -->
+              <div class="flex items-center gap-2 text-muted">
+                <UIcon name="i-lucide-folder" class="size-3.5" />
+                <span class="truncate">{{ entry.project.name }}</span>
+                <span class="text-muted/50">•</span>
+                <UIcon name="i-lucide-calendar" class="size-3.5" />
+                <span>{{ formatDate(entry.spent_on) }}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Hours & Link Icon -->
+        <!-- Hours & Activity -->
         <div class="flex items-center gap-3 shrink-0 ml-4">
           <div class="text-right">
-            <div class="font-semibold text-lg text-primary">
+            <div class="font-bold text-xl text-primary font-mono">
               {{ entry.hours }}h
             </div>
-            <div v-if="entry.activity" class="text-xs text-muted">
+            <div v-if="entry.activity" class="text-xs text-muted mt-0.5">
               {{ entry.activity.name }}
             </div>
           </div>

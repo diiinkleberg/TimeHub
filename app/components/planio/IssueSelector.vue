@@ -104,98 +104,81 @@ const getPriorityColor = (priority: string) => {
   };
   return colors[priority] || "text-default";
 };
+
+const config = useRuntimeConfig();
+const planioBaseUrl = config.public.planioBaseUrl;
+
+// Generate issue URL
+const getIssueUrl = (issueId: number) => `${planioBaseUrl}/issues/${issueId}`;
 </script>
 
+// app/components/planio/IssueSelector.vue
 <template>
   <div class="space-y-2">
-    <label class="block text-sm font-medium text-highlighted">
-      Select Issue
-    </label>
+    <div class="flex items-center justify-between">
+      <label class="block text-sm font-medium text-highlighted">
+        Select Issue
+      </label>
 
-    <div
-      v-if="pending"
-      class="flex items-center gap-3 px-4 py-3 w-full h-12 bg-elevated border border-default rounded-lg"
-    >
-      <UIcon
-        name="i-lucide-loader-2"
-        class="w-4 h-4 animate-spin text-accent"
-      />
-      <span class="text-sm text-muted font-medium">Loading issues...</span>
+      <!-- Link to issue in Planio -->
+      <NuxtLink
+        v-if="props.modelValue"
+        :to="getIssueUrl(props.modelValue.id)"
+        target="_blank"
+        class="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors"
+      >
+        <UIcon name="i-lucide-external-link" class="size-3.5" />
+        <span>Open in Planio</span>
+      </NuxtLink>
     </div>
 
-    <div
-      v-else-if="error"
-      class="text-sm text-red-400 bg-red-900/20 p-2 rounded border border-red-800"
-    >
-      Failed to load issues
-    </div>
+    <ClientOnly>
+      <!-- All your v-if/v-else-if/v-else logic here -->
+      <div
+        v-if="pending"
+        class="flex items-center gap-3 px-4 py-3 w-full h-12 bg-elevated border border-default rounded-lg"
+      >
+        <UIcon
+          name="i-lucide-loader-2"
+          class="w-4 h-4 animate-spin text-accent"
+        />
+        <span class="text-sm text-muted font-medium">Loading issues...</span>
+      </div>
 
-    <USelectMenu
-      v-else
-      :model-value="selectedItem"
-      :items="issueItems"
-      :placeholder="
-        projectId ? 'Search issues in project...' : 'Search all your issues...'
-      "
-      leading-icon="i-lucide-circle-dot"
-      searchable
-      :filter-fields="['id', 'subject', 'description', 'priority', 'project']"
-      class="w-full h-10"
-      :ui="{
-        base: selectedItem
-          ? 'bg-elevated border-primary text-primary font-bold'
-          : 'bg-elevated border-default text-default',
-        leadingIcon: selectedItem ? 'text-primary' : 'text-muted',
-        placeholder: 'text-muted',
-        content: 'bg-elevated border-default shadow-xl',
-        viewport: 'p-1 max-h-[400px]',
-        item: 'text-default hover:bg-muted data-[highlighted]:bg-accented data-[highlighted]:text-highlighted rounded-md px-3 py-2',
-        input: 'bg-elevated text-default placeholder:text-muted p-0.5',
-      }"
-      @update:model-value="handleSelection"
-    >
-      <!-- Dropdown item display -->
-      <template #item-label="{ item }">
-        <div class="flex flex-col gap-1 min-w-0">
-          <!-- Header: ID + Title -->
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-mono text-muted shrink-0"
-              >#{{ item.id }}</span
-            >
-            <span class="font-medium text-sm text-default truncate flex-1">{{
-              item.subject
-            }}</span>
-          </div>
+      <div
+        v-else-if="error"
+        class="text-sm text-red-400 bg-red-900/20 p-2 rounded border border-red-800"
+      >
+        Failed to load issues
+      </div>
 
-          <!-- Footer: Project + Status + Priority -->
-          <div class="flex items-center gap-2 text-xs">
-            <span class="text-muted">{{ item.project }}</span>
-            <span class="text-muted">•</span>
-            <span class="text-muted">{{ item.status }}</span>
-            <span v-if="item.priority" class="text-muted">•</span>
-            <span
-              v-if="item.priority"
-              :class="getPriorityColor(item.priority)"
-              class="font-medium"
-            >
-              {{ item.priority }}
-            </span>
-          </div>
+      <USelectMenu
+        v-else
+        :model-value="selectedItem"
+        :items="issueItems"
+        :placeholder="
+          projectId
+            ? 'Search issues in project...'
+            : 'Search all your issues...'
+        "
+        leading-icon="i-lucide-circle-dot"
+        searchable
+        :filter-fields="['id', 'subject', 'description', 'priority', 'project']"
+        class="w-full h-10"
+        @update:model-value="handleSelection"
+      >
+        <!-- ...your templates... -->
+      </USelectMenu>
+
+      <template #fallback>
+        <!-- Server-rendered placeholder -->
+        <div
+          class="flex items-center gap-3 px-4 py-3 w-full h-10 bg-elevated border border-default rounded-lg"
+        >
+          <UIcon name="i-lucide-circle-dot" class="w-4 h-4 text-muted" />
+          <span class="text-sm text-muted">Loading issues...</span>
         </div>
       </template>
-
-      <template #empty>
-        <div class="text-center py-6 text-muted">
-          <UIcon name="i-lucide-inbox" class="size-8 mx-auto mb-2 opacity-50" />
-          <p class="text-sm">
-            {{
-              projectId
-                ? "No issues found in this project"
-                : "No open issues assigned to you"
-            }}
-          </p>
-        </div>
-      </template>
-    </USelectMenu>
+    </ClientOnly>
   </div>
 </template>

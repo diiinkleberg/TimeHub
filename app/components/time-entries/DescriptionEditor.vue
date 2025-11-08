@@ -42,22 +42,23 @@ const isGithubLinked = computed(() =>
 
 // Fetch GitHub commits for the selected date
 const githubCommits = ref<
-  Array<{ sha: string; message: string; date: string; url: string }>
+  Array<{ sha: string; message: string; date: string; url: string; repo: string }>
 >([]);
 
 const selectedCommits = ref<
-  Array<{ label: string; value: string; sha: string; message: string; date: string; url: string }>
+  Array<{ label: string; value: string; sha: string; message: string; date: string; url: string; repo: string }>
 >([]);
 
 // Transform commits into SelectMenu items
 const commitItems = computed(() =>
   githubCommits.value.map((commit) => ({
-    label: commit.message,
+    label: `${commit.message} (${commit.repo})`,
     value: commit.sha,
     sha: commit.sha,
     message: commit.message,
     date: commit.date,
     url: commit.url,
+    repo: commit.repo,
   })),
 );
 
@@ -65,19 +66,30 @@ async function fetchGitHubCommits() {
   if (!props.spentOn || !isGithubLinked.value) return;
 
   isLoadingGitHub.value = true;
+  console.log("🔍 Fetching GitHub commits for date:", props.spentOn);
   try {
-    const since = new Date(props.spentOn);
+    // Get commits from the selected date and the day before
+    // (to catch commits made near midnight)
+    const selectedDate = new Date(props.spentOn);
+    const since = new Date(selectedDate);
+    since.setDate(since.getDate() - 1); // Start from day before
     since.setHours(0, 0, 0, 0);
 
+    const until = new Date(selectedDate);
+    until.setDate(until.getDate() + 1); // End day after
+    until.setHours(23, 59, 59, 999);
+
     const commits = await $fetch<
-      Array<{ sha: string; message: string; date: string; url: string }>
+      Array<{ sha: string; message: string; date: string; url: string; repo: string }>
     >("/api/github/commits", {
       query: {
         since: since.toISOString(),
-        limit: 5,
+        until: until.toISOString(),
+        limit: 20, // Get more to filter
       },
     });
 
+    console.log("✅ Received commits from API:", commits.length, commits);
     githubCommits.value = commits;
     // Clear selection when commits change
     selectedCommits.value = [];
@@ -122,10 +134,12 @@ const enhanceDescription = async () => {
 
     if (selectedCommits.value.length > 0) {
       const commitsContext = selectedCommits.value
-        .map((c) => `- ${c.message} (${c.sha})`)
+        .map((c) => `- [${c.repo}] ${c.message} (${c.sha}) - ${c.url}`)
         .join("\n");
-      contextDescription = `${rawInput.value}\n\nGitHub Commits:\n${commitsContext}`;
+      contextDescription = `${rawInput.value}\n\nRelated GitHub Commits:\n${commitsContext}`;
     }
+
+    console.log("🤖 Sending to AI:", { contextDescription, commits: selectedCommits.value.length });
 
     const response = await $fetch<{
       enhanced: string;
@@ -144,7 +158,7 @@ const enhanceDescription = async () => {
 
     toast.add({
       title: "Description enhanced",
-      description: `AI has improved your work description (${response.usedToken} tokens used)`,
+      description: `AI has improved your work description${selectedCommits.value.length > 0 ? ` with ${selectedCommits.value.length} commit${selectedCommits.value.length !== 1 ? 's' : ''}` : ''} (${response.usedToken} tokens used)`,
       color: "success",
     });
   } catch (error) {
@@ -201,6 +215,7 @@ onMounted(async () => {
         :options="commitItems"
         multiple
         searchable
+        option-attribute="label"
         :placeholder="
           isLoadingGitHub
             ? 'Loading commits...'

@@ -5,9 +5,10 @@ export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event);
     const since = query.since as string | undefined;
+    const until = query.until as string | undefined;
     const limit = Number(query.limit) || 10;
 
-    console.log("🔍 GitHub Commits - Query params:", { since, limit });
+    console.log("🔍 GitHub Commits - Query params:", { since, until, limit });
 
     const accessToken = await getUserAccessToken(event, "github");
     const octokit = new Octokit({ auth: accessToken });
@@ -27,35 +28,72 @@ export default defineEventHandler(async (event) => {
 
     console.log(`📅 Total events fetched: ${events.length}`);
 
-    // Extract commits from PushEvents
+    // Debug: Show event types
+    const eventTypes = events.reduce((acc: Record<string, number>, evt) => {
+      const type = evt.type || "Unknown";
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {});
+    console.log("📊 Event types breakdown:", eventTypes);
+
+    // Extract unique repos from PushEvents and fetch commits directly
     const commits: any[] = [];
     const sinceDate = since ? new Date(since) : null;
+    const untilDate = until ? new Date(until) : null;
 
-    console.log("🗓️  Filtering since:", sinceDate?.toISOString() || "No date filter");
+    console.log("🗓️  Filtering:", {
+      since: sinceDate?.toISOString() || "No start date",
+      until: untilDate?.toISOString() || "No end date",
+    });
 
+    // Get unique repos from push events
+    const reposToCheck = new Set<string>();
     for (const evt of events) {
-      if (evt.type !== "PushEvent") continue;
+      if (evt.type === "PushEvent") {
+        reposToCheck.add(evt.repo.name);
+      }
+    }
 
-      const eventDate = new Date(evt.created_at as string);
-      if (sinceDate && eventDate < sinceDate) continue;
+    console.log(`� Found ${reposToCheck.size} repos with push events`);
 
-      const pushEvent = evt as any;
-      for (const commit of pushEvent.payload?.commits || []) {
-        commits.push({
-          sha: commit.sha.substring(0, 7),
-          message: commit.message.split("\n")[0],
-          date: evt.created_at,
-          url: commit.url
-            .replace("api.github.com/repos", "github.com")
-            .replace("/commits/", "/commit/"),
-          repo: evt.repo.name,
-        });
+    // Fetch commits from each repo
+    for (const repoName of Array.from(reposToCheck).slice(0, 5)) {
+      // Limit to 5 repos
+      try {
+        const [owner, repo] = repoName.split("/");
+        console.log(`  📂 Fetching commits from ${repoName}...`);
+
+        const { data: repoCommits } = await octokit.request(
+          "GET /repos/{owner}/{repo}/commits",
+          {
+            owner,
+            repo,
+            author: user.login,
+            since: sinceDate?.toISOString(),
+            until: untilDate?.toISOString(),
+            per_page: 10,
+          },
+        );
+
+        console.log(`    ✅ Found ${repoCommits.length} commits by ${user.login}`);
+
+        for (const commit of repoCommits) {
+          commits.push({
+            sha: commit.sha.substring(0, 7),
+            message: commit.commit.message.split("\n")[0],
+            date: commit.commit.author?.date || commit.commit.committer?.date,
+            url: commit.html_url,
+            repo: repoName,
+          });
+        }
+      } catch (repoError: any) {
+        console.warn(`    ⚠️ Could not fetch from ${repoName}:`, repoError.message);
       }
 
       if (commits.length >= limit) break;
     }
 
-    console.log(`✅ Found ${commits.length} commits matching criteria`);
+    console.log(`✅ Found ${commits.length} total commits`);
 
     const sortedCommits = commits
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())

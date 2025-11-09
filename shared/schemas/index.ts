@@ -1,3 +1,3 @@
-export * from './planio';
+export * from './planio'
 
-export * from './github';
+export * from './github'

@@ -1,36 +1,39 @@
-<script setup>
-const colorMode = useColorMode();
-const color = computed(() =>
-  colorMode.value === "dark" ? "#1b1718" : "white",
-);
+<script setup lang="ts">
+const colorMode = useColorMode()
+const preferencesStore = usePreferencesStore()
 
-const preferencesStore = usePreferencesStore();
-preferencesStore.initializeAppConfig();
+if (import.meta.client) {
+  preferencesStore.initializeAppConfig()
+}
 
-useHead({
+const themeColor = computed(() =>
+  colorMode.value === 'dark' ? '#1b1718' : '#ffffff'
+)
+
+useHead(() => ({
   meta: [
-    { charset: "utf-8" },
-    { name: "viewport", content: "width=device-width, initial-scale=1" },
-    { key: "theme-color", name: "theme-color", content: color },
+    { charset: 'utf-8' },
+    { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+    { key: 'theme-color', name: 'theme-color', content: themeColor.value }
   ],
-  link: [{ rel: "icon", href: "/favicon.ico" }],
+  link: [{ rel: 'icon', href: '/favicon.ico' }],
   htmlAttrs: {
-    lang: "en",
-  },
-});
+    lang: 'en'
+  }
+}))
 
-const title = "TimeHub";
-const description = "PlanIo Wrapper for faster time tracking.";
+const seoTitle = 'TimeHub'
+const seoDescription = 'PlanIO companion for faster, accurate time tracking.'
 
 useSeoMeta({
-  title,
-  description,
-  ogTitle: title,
-  ogDescription: description,
-  ogImage: "https://ui.nuxt.com/assets/templates/nuxt/starter-light.png",
-  twitterImage: "https://ui.nuxt.com/assets/templates/nuxt/starter-light.png",
-  twitterCard: "summary_large_image",
-});
+  title: seoTitle,
+  description: seoDescription,
+  ogTitle: seoTitle,
+  ogDescription: seoDescription,
+  ogImage: 'https://ui.nuxt.com/assets/templates/nuxt/starter-light.png',
+  twitterImage: 'https://ui.nuxt.com/assets/templates/nuxt/starter-light.png',
+  twitterCard: 'summary_large_image'
+})
 </script>
 
 <template>

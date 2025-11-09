@@ -1,45 +1,81 @@
 <script setup lang="ts">
-import type { PlanioTimeEntry } from "#shared/schemas/planio/time-entry";
-import { format } from "date-fns";
+import { computed } from 'vue'
+import type { PlanioTimeEntry } from '#shared/schemas/planio/time-entry'
+import { format } from 'date-fns'
 
 interface Props {
-  entries: PlanioTimeEntry[];
-  pending?: boolean;
+  entries: PlanioTimeEntry[]
+  pending?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  pending: false,
-});
+  pending: false
+})
 
-const config = useRuntimeConfig();
-const planioBaseUrl = config.public.planioBaseUrl;
+const config = useRuntimeConfig()
+const planioBaseUrl = config.public.planioBaseUrl
 
-// Generate edit URL for time entries
+const entriesToDisplay = computed(() => props.entries.slice(0, 10))
+const entriesCount = computed(() => props.entries.length)
+const skeletonRows = computed(() => Array.from({ length: 4 }, (_, index) => index))
+
+const totalLabel = computed(() =>
+  entriesCount.value === 1
+    ? '1 entry'
+    : `${entriesCount.value} entries`
+)
+
 const getEditUrl = (entryId: number) =>
-  `${planioBaseUrl}/time_entries/${entryId}/edit`;
+  `${planioBaseUrl}/time_entries/${entryId}/edit`
 
-// Format date for display
 const formatDate = (dateString: string) => {
   try {
-    return format(new Date(dateString), "MMM d, yyyy");
+    return format(new Date(dateString), 'MMM d, yyyy')
   } catch {
-    return dateString;
+    return dateString
   }
-};
+}
 </script>
 
 <template>
   <UCard>
     <template #header>
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold">Recent Entries</h3>
-        <UBadge variant="soft">{{ entries.length }} entries</UBadge>
+        <h3 class="text-lg font-semibold">
+          Recent Entries
+        </h3>
+        <UBadge variant="soft">
+          {{ totalLabel }}
+        </UBadge>
       </div>
     </template>
 
-    <div class="divide-y divide-default">
+    <div
+      v-if="pending"
+      class="space-y-4"
+    >
+      <div
+        v-for="row in skeletonRows"
+        :key="row"
+        class="flex items-center justify-between py-4"
+      >
+        <div class="flex-1 min-w-0 flex items-start gap-3">
+          <USkeleton class="w-14 h-6 rounded" />
+          <div class="flex-1 space-y-3">
+            <USkeleton class="h-4 w-3/4" />
+            <USkeleton class="h-3 w-2/3" />
+          </div>
+        </div>
+        <USkeleton class="w-20 h-5 rounded" />
+      </div>
+    </div>
+
+    <div
+      v-else
+      class="divide-y divide-default"
+    >
       <NuxtLink
-        v-for="entry in entries.slice(0, 10)"
+        v-for="entry in entriesToDisplay"
         :key="entry.id"
         :to="getEditUrl(entry.id)"
         target="_blank"
@@ -72,7 +108,10 @@ const formatDate = (dateString: string) => {
                 v-if="entry.issue"
                 class="flex items-center gap-1.5 text-muted"
               >
-                <UIcon name="i-lucide-circle-dot" class="size-3.5" />
+                <UIcon
+                  name="i-lucide-circle-dot"
+                  class="size-3.5"
+                />
                 <span class="truncate font-medium">
                   Issue: {{ entry.issue.subject || `#${entry.issue.id}` }}
                 </span>
@@ -80,10 +119,16 @@ const formatDate = (dateString: string) => {
 
               <!-- Project & Date -->
               <div class="flex items-center gap-2 text-muted">
-                <UIcon name="i-lucide-folder" class="size-3.5" />
+                <UIcon
+                  name="i-lucide-folder"
+                  class="size-3.5"
+                />
                 <span class="truncate">{{ entry.project.name }}</span>
                 <span class="text-muted/50">•</span>
-                <UIcon name="i-lucide-calendar" class="size-3.5" />
+                <UIcon
+                  name="i-lucide-calendar"
+                  class="size-3.5"
+                />
                 <span>{{ formatDate(entry.spent_on) }}</span>
               </div>
             </div>
@@ -96,7 +141,10 @@ const formatDate = (dateString: string) => {
             <div class="font-bold text-xl text-primary font-mono">
               {{ entry.hours }}h
             </div>
-            <div v-if="entry.activity" class="text-xs text-muted mt-0.5">
+            <div
+              v-if="entry.activity"
+              class="text-xs text-muted mt-0.5"
+            >
               {{ entry.activity.name }}
             </div>
           </div>
@@ -108,9 +156,12 @@ const formatDate = (dateString: string) => {
       </NuxtLink>
     </div>
 
-    <template v-if="entries.length > 10" #footer>
+    <template
+      v-if="entriesCount > 10"
+      #footer
+    >
       <div class="text-center text-sm text-muted">
-        Showing 10 of {{ entries.length }} entries
+        Showing {{ entriesToDisplay.length }} of {{ entriesCount }} entries
       </div>
     </template>
   </UCard>

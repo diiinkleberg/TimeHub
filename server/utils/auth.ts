@@ -1,6 +1,6 @@
-import { auth } from "~~/server/lib/auth.config";
-import { toWebRequest, type H3Event } from "h3";
-import prisma from "../lib/db/prisma";
+import { auth } from '~~/server/lib/auth.config'
+import { toWebRequest, type H3Event } from 'h3'
+import prisma from '../lib/db/prisma'
 
 /**
  * Get user's access token for a specific OAuth provider
@@ -12,35 +12,35 @@ import prisma from "../lib/db/prisma";
  */
 export async function getUserAccessToken(
   event: H3Event,
-  providerId: string,
+  providerId: string
 ): Promise<string> {
-  const request = toWebRequest(event);
-  
+  const request = toWebRequest(event)
+
   const session = await auth.api.getSession({
-    headers: request.headers,
-  });
+    headers: request.headers
+  })
 
   if (!session?.user) {
     throw createError({
       statusCode: 401,
-      message: "Session not found. Please sign in again.",
-    });
+      message: 'Session not found. Please sign in again.'
+    })
   }
 
   // Get account for provider
   const account = await prisma.account.findFirst({
     where: {
       userId: session.user.id,
-      providerId: providerId,
-    },
-  });
+      providerId: providerId
+    }
+  })
 
   if (!account?.accessToken) {
     throw createError({
       statusCode: 401,
-      message: `No ${providerId} account linked`,
-    });
+      message: `No ${providerId} account linked`
+    })
   }
 
-  return account.accessToken;
+  return account.accessToken
 }

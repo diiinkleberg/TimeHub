@@ -1,28 +1,24 @@
-import { authClient } from "~/lib/auth-client"
+import { authClient } from '~/lib/auth-client'
+
+const PUBLIC_PATHS = new Set(['/', '/error'])
 
 /**
- * Global authentication middleware.
- * - Redirects authenticated users away from the landing page.
- * - Protects non-public routes from unauthenticated access.
- * Uses replace navigation to avoid history stack issues.
+ * Global authentication middleware
  */
-
 
 export default defineNuxtRouteMiddleware(async (to) => {
   const { data: session } = await authClient.useSession(useFetch)
 
-  const isAuthenticated = !!session.value?.user
+  const isAuthenticated = Boolean(session.value?.user)
+  const isPublicRoute = PUBLIC_PATHS.has(to.path)
 
-  const isPublic = ['/', '/error'].includes(to.path)
-
-  // Redirect logged-in users away from landing page
   if (to.path === '/' && isAuthenticated) {
     return navigateTo('/dashboard', { replace: true })
   }
 
-  // Protect all non-public routes
-  if (!isPublic && !isAuthenticated) {
+  if (!isPublicRoute && !isAuthenticated) {
     return navigateTo('/', { replace: true })
   }
-})
 
+  return undefined
+})

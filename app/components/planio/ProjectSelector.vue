@@ -1,67 +1,53 @@
-// app/components/planio/ProjectSelector.vue
 <script setup lang="ts">
-import type { SimpleProject } from "#shared/types/planio";
+import type { SimpleProject } from '#shared/types/planio'
 
 interface Props {
-  modelValue?: SimpleProject | null;
+  modelValue?: SimpleProject | null
 }
 
 interface Emits {
-  "update:modelValue": [value: SimpleProject | null];
+  'update:modelValue': [value: SimpleProject | null]
 }
 
-const props = withDefaults(defineProps<Props>(), { modelValue: null });
-const emit = defineEmits<Emits>();
+const props = withDefaults(defineProps<Props>(), { modelValue: null })
+const emit = defineEmits<Emits>()
 
 const {
   data: projects,
   pending,
   error,
-  refresh,
-} = useFetch<SimpleProject[]>("/api/planio/projects", {
+  refresh
+} = useFetch<SimpleProject[]>('/api/planio/projects', {
   server: false,
   default: () => [],
-  immediate: false, // Don't fetch on SSR
-});
+  immediate: false
+})
 
-// Fetch on mount
-onMounted(() => {
-  refresh();
-});
-
-// Debug logging
-watch(
-  [projects, pending, error],
-  ([projectsVal, pendingVal, errorVal]) => {
-    console.log("📁 ProjectSelector state:", {
-      projects: projectsVal,
-      projectCount: projectsVal?.length,
-      pending: pendingVal,
-      error: errorVal,
-    });
-  },
-  { immediate: true },
-);
-
-const projectItems = computed(() => {
-  const items = projects.value.map((project) => ({
+const projectItems = computed(() =>
+  projects.value.map(project => ({
     label: project.name,
     value: project.id,
-    project,
-  }));
-  console.log("📁 Project items computed:", items);
-  return items;
-});
+    project
+  }))
+)
 
 const selectedItem = computed(() =>
   props.modelValue
-    ? projectItems.value.find((item) => item.value === props.modelValue!.id)
-    : undefined,
-);
+    ? projectItems.value.find(item => item.value === props.modelValue!.id)
+    : undefined
+)
 
-const handleSelection = (item: (typeof projectItems.value)[0] | undefined) => {
-  emit("update:modelValue", item?.project ?? null);
-};
+const isProjectOption = (option: unknown): option is (typeof projectItems.value)[number] =>
+  typeof option === 'object' && option !== null && 'project' in option
+
+const handleSelection = (value: unknown) => {
+  const item = isProjectOption(value) ? value : undefined
+  emit('update:modelValue', item?.project ?? null)
+}
+
+onMounted(() => {
+  refresh()
+})
 </script>
 
 <template>
@@ -96,23 +82,42 @@ const handleSelection = (item: (typeof projectItems.value)[0] | undefined) => {
         placeholder="Select project..."
         leading-icon="i-lucide-folder"
         searchable
+        :filter-fields="['label', 'value']"
         class="w-full h-10"
         :ui="{
           base: selectedItem
             ? 'bg-elevated border-primary text-primary font-bold'
             : 'bg-elevated border-default text-default',
           leadingIcon: selectedItem ? 'text-primary' : 'text-muted',
-          placeholder: 'text-muted',
+          placeholder: 'text-muted'
         }"
         @update:model-value="handleSelection"
       >
+        <template #item-label="{ item }">
+          <div
+            v-if="item && typeof item === 'object' && 'project' in item"
+            class="flex min-w-0 items-center justify-between gap-3"
+          >
+            <span class="truncate text-sm font-medium text-default">
+              {{ (item as any).project.name }}
+            </span>
+            <span class="text-xs font-mono text-muted">#{{ (item as any).project.id }}</span>
+          </div>
+          <span
+            v-else
+            class="text-sm text-muted"
+          >{{ item }}</span>
+        </template>
+
         <template #empty>
           <div class="text-center py-6 text-muted">
             <UIcon
               name="i-lucide-folder-x"
               class="size-8 mx-auto mb-2 opacity-50"
             />
-            <p class="text-sm">No projects available</p>
+            <p class="text-sm">
+              No projects available
+            </p>
           </div>
         </template>
       </USelectMenu>
@@ -122,7 +127,10 @@ const handleSelection = (item: (typeof projectItems.value)[0] | undefined) => {
         <div
           class="flex items-center gap-3 px-4 py-3 w-full h-10 bg-elevated border border-default rounded-lg"
         >
-          <UIcon name="i-lucide-folder" class="w-4 h-4 text-muted" />
+          <UIcon
+            name="i-lucide-folder"
+            class="w-4 h-4 text-muted"
+          />
           <span class="text-sm text-muted">Loading projects...</span>
         </div>
       </template>

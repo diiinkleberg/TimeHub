@@ -1,10 +1,21 @@
 <script setup lang="ts">
-const preferencesStore = usePreferencesStore();
+import { storeToRefs } from 'pinia'
+
+const preferencesStore = usePreferencesStore()
+const { shouldShowCookieBanner } = storeToRefs(preferencesStore)
+
+const handleAccept = () => {
+  if (!shouldShowCookieBanner.value) {
+    return
+  }
+
+  preferencesStore.acceptCookies()
+}
 </script>
 
 <template>
   <UAlert
-    v-if="preferencesStore.shouldShowCookieBanner"
+    v-if="shouldShowCookieBanner"
     color="neutral"
     variant="subtle"
     icon="i-lucide-cookie"
@@ -19,18 +30,16 @@ const preferencesStore = usePreferencesStore();
         </p>
 
         <div class="text-xs space-y-1">
-          <p class="font-medium">Cookies we use:</p>
+          <p class="font-medium">
+            Cookies used:
+          </p>
           <ul class="list-disc list-inside space-y-0.5 ml-2">
             <li>
-              <code class="text-xs bg-elevated px-1 py-0.5 rounded"
-                >th.session</code
-              >
+              <code class="text-xs bg-elevated px-1 py-0.5 rounded">session</code>
               - Authentication
             </li>
             <li>
-              <code class="text-xs bg-elevated px-1 py-0.5 rounded"
-                >preferences</code
-              >
+              <code class="text-xs bg-elevated px-1 py-0.5 rounded">preferences</code>
               - Theme settings
             </li>
           </ul>
@@ -43,7 +52,7 @@ const preferencesStore = usePreferencesStore();
         color="primary"
         label="Accept"
         size="xs"
-        @click="preferencesStore.acceptCookies()"
+        @click="handleAccept"
       />
     </template>
   </UAlert>

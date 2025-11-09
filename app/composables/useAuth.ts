@@ -1,48 +1,72 @@
-import { authClient } from "~/lib/auth-client";
-import type { User } from "#shared/types/auth";
+import type { ComputedRef, Ref } from 'vue'
+import { createSingletonPromise } from '@vueuse/core'
+import { authClient } from '~/lib/auth-client'
+import type { User } from '#shared/types/auth'
 
-export const useAuth = async () => {
-  const { data: session } = await authClient.useSession(useFetch);
+interface UseAuthReturn {
+  session: Ref<any>
+  user: ComputedRef<User | undefined>
+  isAuthenticated: ComputedRef<boolean>
+  signInWithPlanio: () => Promise<void>
+  linkGithubAccount: () => Promise<void>
+  listAccounts: () => ReturnType<typeof authClient.listAccounts>
+  signOut: () => Promise<void>
+  unlinkGithubAccount: () => Promise<void>
+}
 
-  const user = computed(() => session?.value?.user as User | undefined);
-  const isAuthenticated = computed(() => !!user.value);
+async function createAuth(): Promise<UseAuthReturn> {
+  const { data: session } = await authClient.useSession(useFetch)
+
+  const user = computed(() => session.value?.user as User | undefined)
+  const isAuthenticated = computed(() => Boolean(user.value))
+
+  const signInWithPlanio = async () => {
+    await authClient.signIn.social({
+      provider: 'planio',
+      callbackURL: '/dashboard',
+      errorCallbackURL: '/error'
+    })
+  }
+
+  const linkGithubAccount = async () => {
+    await authClient.linkSocial({
+      provider: 'github',
+      callbackURL: '/settings',
+      errorCallbackURL: '/error'
+    })
+  }
+
+  const unlinkGithubAccount = async () => {
+    await authClient.unlinkAccount({
+      providerId: 'github'
+    })
+  }
+
+  const signOut = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: async () => {
+          session.value = null
+          await navigateTo('/', { replace: true })
+        }
+      }
+    })
+  }
+
+  const listAccounts = () => authClient.listAccounts()
 
   return {
-    authClient,
-    session: session.value,
+    session,
     user,
     isAuthenticated,
+    signInWithPlanio,
+    linkGithubAccount,
+    listAccounts,
+    signOut,
+    unlinkGithubAccount
+  }
+}
 
-    signInWithPlanio: async () =>
-      await authClient.signIn.social({
-        provider: "planio",
-        callbackURL: "/dashboard",
-        errorCallbackURL: "/error",
-      }),
-    linkGithubAccount: async () =>
-      await authClient.linkSocial({
-        provider: "github",
-        callbackURL: "/settings",
-        errorCallbackURL: "/error",
-      }),
+const useAuthSingleton = createSingletonPromise(createAuth)
 
-    listAccounts: async () => await authClient.listAccounts(),
-
-    signOut: () => {
-      authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            session.value = null;
-            navigateTo("/", { replace: true });
-          },
-        },
-      });
-    },
-
-    unlinkGithubAccount: async () => {
-      await authClient.unlinkAccount({
-        providerId: "github",
-      });
-    },
-  };
-};
+export const useAuth = () => useAuthSingleton()

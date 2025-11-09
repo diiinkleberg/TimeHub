@@ -1,57 +1,31 @@
 <script setup lang="ts">
-const { linkGithubAccount, unlinkGithubAccount, listAccounts } =
-  await useAuth();
+import { useLinkedAccounts } from '~/composables/useLinkedAccounts'
 
-const accounts = ref<Array<any>>([]);
-const isLoading = ref(true);
-const showUnlinkConfirm = ref(false);
+const {
+  loading,
+  isGithubLinked,
+  linkGithub,
+  unlinkGithub
+} = await useLinkedAccounts()
 
-async function fetchAccounts() {
-  isLoading.value = true;
+const showUnlinkConfirm = ref(false)
+
+const handleLink = async () => {
   try {
-    const result = await listAccounts();
-    if (result.data) {
-      accounts.value = result.data;
-    }
+    await linkGithub()
   } catch (error) {
-    console.error("Failed to fetch accounts:", error);
-  } finally {
-    isLoading.value = false;
+    console.error('Failed to link GitHub:', error)
   }
 }
 
-const isGithubLinked = computed(() =>
-  accounts.value.some((acc) => acc.providerId === "github"),
-);
-
-async function handleLink() {
-  isLoading.value = true;
+const handleUnlink = async () => {
   try {
-    await linkGithubAccount();
+    await unlinkGithub()
+    showUnlinkConfirm.value = false
   } catch (error) {
-    console.error("Failed to link GitHub:", error);
-  } finally {
-    isLoading.value = false;
+    console.error('Failed to unlink GitHub:', error)
   }
 }
-
-async function handleUnlink() {
-  isLoading.value = true;
-  try {
-    await unlinkGithubAccount();
-    await fetchAccounts();
-    showUnlinkConfirm.value = false;
-  } catch (error) {
-    console.error("Failed to unlink GitHub:", error);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-// Initial fetch
-onMounted(async () => {
-  await fetchAccounts();
-});
 </script>
 
 <template>
@@ -59,11 +33,18 @@ onMounted(async () => {
     <template #header>
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg">
-          <UIcon name="i-simple-icons-github" class="size-5" />
+          <UIcon
+            name="i-simple-icons-github"
+            class="size-5"
+          />
         </div>
         <div>
-          <h3 class="text-base font-semibold">GitHub</h3>
-          <p class="text-sm text-muted">Connect your account</p>
+          <h3 class="text-base font-semibold">
+            GitHub
+          </h3>
+          <p class="text-sm text-muted">
+            Connect your account
+          </p>
         </div>
       </div>
     </template>
@@ -74,13 +55,19 @@ onMounted(async () => {
       </p>
 
       <!-- Loading state -->
-      <div v-if="isLoading" class="flex items-center gap-2 text-muted py-4">
-        <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
+      <div
+        v-if="loading"
+        class="flex items-center gap-2 text-muted py-4"
+      >
+        <UIcon
+          name="i-lucide-loader-2"
+          class="size-4 animate-spin"
+        />
         <span class="text-sm">Loading connection status...</span>
       </div>
 
       <!-- Not connected state -->
-      <template v-if="!isGithubLinked && !isLoading">
+      <template v-if="!isGithubLinked && !loading">
         <UAlert
           icon="i-lucide-info"
           color="error"
@@ -115,7 +102,7 @@ onMounted(async () => {
           color="error"
           variant="outline"
           size="sm"
-          :disabled="isLoading"
+          :disabled="loading"
           @click="showUnlinkConfirm = true"
         >
           Unlink Account
@@ -143,7 +130,7 @@ onMounted(async () => {
           <UButton
             color="error"
             size="sm"
-            :loading="isLoading"
+            :loading="loading"
             @click="handleUnlink"
           >
             Confirm Unlink

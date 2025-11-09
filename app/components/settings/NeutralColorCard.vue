@@ -1,22 +1,30 @@
 <script setup lang="ts">
-import { NEUTRAL_COLORS } from "~/stores/preferences";
-const preferencesStore = usePreferencesStore();
-const colorMode = await useColorMode();
+import { NEUTRAL_COLORS } from '~/stores/preferences'
+
+const preferencesStore = usePreferencesStore()
+const colorMode = useColorMode()
 </script>
 
 <template>
   <UCard>
-  <template #header>
+    <template #header>
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg bg-primary/10">
-          <UIcon name="oui:color" class="size-5 text-primary" />
+          <UIcon
+            name="oui:color"
+            class="size-5 text-primary"
+          />
         </div>
         <div>
-          <h3 class="text-base font-semibold">Background Color</h3>
-          <p class="text-sm text-muted">Choose your preferred accent color</p>
+          <h3 class="text-base font-semibold">
+            Background Color
+          </h3>
+          <p class="text-sm text-muted">
+            Choose your preferred accent color
+          </p>
         </div>
-        <UAlert 
-        v-if="colorMode.value === 'light'"
+        <UAlert
+          v-if="colorMode.value === 'light'"
           title="Watch Out!"
           description="Changes in the background color are only visible in light mode "
           icon="streamline:invisible-1"
@@ -24,7 +32,7 @@ const colorMode = await useColorMode();
           :ui="{
             icon: 'size-11'
           }"
-          />
+        />
       </div>
     </template>
     <UFormField label="Select Base Color">
@@ -37,7 +45,7 @@ const colorMode = await useColorMode();
           :class="{
             'border-primary bg-primary/10 shadow-md':
               preferencesStore.neutralColor === color,
-            'border-default': preferencesStore.neutralColor !== color,
+            'border-default': preferencesStore.neutralColor !== color
           }"
           @click="preferencesStore.setNeutralColor(color)"
         >

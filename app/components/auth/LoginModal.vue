@@ -1,13 +1,14 @@
 <script lang="ts" setup>
-const isLoading = ref(false);
+const { signInWithPlanio } = await useAuth()
+const isLoading = ref(false)
 
-async function handleSignIn() {
-  isLoading.value = true;
+const handleSignIn = async () => {
+  isLoading.value = true
+
   try {
-    const { signInWithPlanio } = await useAuth();
-    await signInWithPlanio();
+    await signInWithPlanio()
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
 }
 </script>
@@ -18,7 +19,11 @@ async function handleSignIn() {
     description="Connect your PlanIO account to start tracking time."
     class="flex items-center justify-center"
   >
-    <UButton label="Sign In" color="primary" variant="subtle" />
+    <UButton
+      label="Sign In"
+      color="primary"
+      variant="subtle"
+    />
 
     <template #body>
       <div class="flex flex-col items-center justify-center w-full">
@@ -31,7 +36,8 @@ async function handleSignIn() {
           :loading="isLoading"
           class="flex items-center justify-center w-full"
           @click="handleSignIn"
-          >Continue with PlanIO
+        >
+          Continue with PlanIO
         </UButton>
       </div>
     </template>

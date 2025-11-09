@@ -1,60 +1,87 @@
-import { z } from "zod";
-import OpenAI from "openai";
+import { z } from 'zod'
+import OpenAI from 'openai'
+import { useServerLogger } from '~~/server/utils/logger'
 
 const EnhanceDescriptionSchema = z.object({
-  description: z.string().min(1).max(5000),
-});
+  description: z.string().min(1).max(5000)
+})
 
 // Create client once, reused across requests
-let aiClient: OpenAI | null = null;
+let aiClient: OpenAI | null = null
 
 function getAIClient() {
   if (!aiClient) {
-    const config = useRuntimeConfig();
-    aiClient = new OpenAI({ apiKey: config.openaiApiKey });
+    const config = useRuntimeConfig()
+    aiClient = new OpenAI({ apiKey: config.openaiApiKey })
   }
-  return aiClient;
+  return aiClient
 }
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
-  const { description } = EnhanceDescriptionSchema.parse(body);
+  const logger = useServerLogger('ai:enhance')
+  const body = await readBody(event)
+  const { description } = EnhanceDescriptionSchema.parse(body)
 
-  const client = getAIClient();
+  const client = getAIClient()
 
   try {
     const response = await client.responses.create({
-      model: "gpt-5-nano",
+      model: 'gpt-5-nano',
       prompt: {
-        id: "pmpt_690b34769f9c8196b60b0a2acc07c8d30072d5f13637a440",
-        version: "1",
+        id: 'pmpt_690b34769f9c8196b60b0a2acc07c8d30072d5f13637a440',
+        version: '1'
       },
-      input: description,
-    });
+      input: description
+    })
 
-    const enhanced = response.output_text?.trim();
-    const usedToken = response.usage?.total_tokens || 0;
+    const enhanced = response.output_text?.trim()
+    const usedToken = response.usage?.total_tokens || 0
 
     if (!enhanced) {
+      logger.warn(
+        {
+          tokenUsage: usedToken,
+          descriptionLength: description.length
+        },
+        'OpenAI returned an empty enhancement response'
+      )
       throw createError({
         statusCode: 500,
-        statusMessage: "Failed to enhance description",
-        message: "OpenAI returned an empty response",
-      });
+        statusMessage: 'Failed to enhance description',
+        message: 'OpenAI returned an empty response'
+      })
     }
+
+    logger.success(
+      {
+        tokenUsage: usedToken,
+        descriptionLength: description.length
+      },
+      'Generated enhanced description'
+    )
 
     return {
       enhanced,
       original: description,
-      usedToken,
-    };
+      usedToken
+    }
   } catch (error: any) {
-    console.error("OpenAI API Error:", error);
+    logger.error(
+      {
+        message: error.message,
+        statusCode: error.statusCode,
+        cause: error.cause,
+        descriptionLength: typeof body?.description === 'string'
+          ? body.description.length
+          : undefined
+      },
+      'OpenAI API error while enhancing description'
+    )
 
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: "AI Enhancement Failed",
-      message: error.message || "Failed to enhance description",
-    });
+      statusMessage: 'AI Enhancement Failed',
+      message: error.message || 'Failed to enhance description'
+    })
   }
-});
+})

@@ -1,168 +1,173 @@
 <script setup lang="ts">
-import type { PlanioIssue } from "#shared/schemas/planio/issue";
-import type { SimpleProject } from "#shared/types/planio";
-import { CalendarDate } from "@internationalized/date";
+import type { PlanioIssue } from '#shared/schemas/planio/issue'
+import type { SimpleProject } from '#shared/types/planio'
+import { CalendarDate } from '@internationalized/date'
+import { useTimeAgo } from '@vueuse/core'
 
 interface Emits {
-  (e: "success"): void;
+  (e: 'success'): void
 }
 
-const emit = defineEmits<Emits>();
+const emit = defineEmits<Emits>()
 
-// Use form store for persistence
-const formStore = useTimeEntryFormStore();
+const selectedProject = ref<SimpleProject | null>(null)
+const selectedIssue = ref<PlanioIssue | null>(null)
+const hours = ref('1:00')
+const comments = ref('')
+const isEnhancing = ref(false)
+const isSettingFromIssue = ref(false)
+const isSyncing = ref(false)
+const submitting = ref(false)
 
-const selectedProject = ref<SimpleProject | null>(formStore.selectedProject);
-const selectedIssue = ref<PlanioIssue | null>(formStore.selectedIssue);
-const hours = ref(formStore.hours);
-const comments = ref(formStore.comments);
-const isEnhancing = ref(false);
-const isSettingFromIssue = ref(false);
+const toCalendarDate = (date: Date) =>
+  new CalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate())
 
-// Initialize date from store or default to today
-formStore.initializeDefaults();
-const spentOn = shallowRef(
-  formStore.spentOn
-    ? new CalendarDate(
-        formStore.spentOn.year,
-        formStore.spentOn.month,
-        formStore.spentOn.day,
-      )
-    : new CalendarDate(
-        new Date().getFullYear(),
-        new Date().getMonth() + 1,
-        new Date().getDate(),
-      ),
-);
+const today = () => toCalendarDate(new Date())
+const spentOn = shallowRef(today())
 
-// Sync form values to store
-watch(selectedProject, (value) => formStore.setProject(value));
-watch(selectedIssue, (value) => formStore.setIssue(value));
-watch(hours, (value) => formStore.setHours(value));
-watch(comments, (value) => formStore.setComments(value));
-watch(spentOn, (value) =>
-  formStore.setSpentOn({
-    year: value.year,
-    month: value.month,
-    day: value.day,
-  }),
-);
+const lastSavedAt = ref<number | null>(null)
+const lastSavedSource = computed(() => lastSavedAt.value ?? Date.now())
+const lastSavedAgo = useTimeAgo(lastSavedSource)
+
+const markLastSaved = () => {
+  if (isSyncing.value) return
+  lastSavedAt.value = Date.now()
+}
+
+watch(selectedProject, markLastSaved)
+watch(selectedIssue, markLastSaved)
+watch(hours, markLastSaved)
+watch(comments, markLastSaved)
+watch(spentOn, markLastSaved)
 
 watch(selectedIssue, (newIssue) => {
-  if (newIssue?.project) {
-    isSettingFromIssue.value = true;
-    selectedProject.value = {
-      id: newIssue.project.id,
-      name: newIssue.project.name,
-    } satisfies SimpleProject;
+  if (!newIssue?.project) return
 
-    nextTick(() => {
-      isSettingFromIssue.value = false;
-    });
-  }
-});
+  isSettingFromIssue.value = true
+  selectedProject.value = {
+    id: newIssue.project.id,
+    name: newIssue.project.name
+  } satisfies SimpleProject
 
-// Convert HH:MM to decimal hours
+  nextTick(() => {
+    isSettingFromIssue.value = false
+  })
+})
+
 const hoursToDecimal = (timeStr: string): number => {
-  const [hours = 0, minutes = 0] = timeStr.split(":").map(Number);
-  return hours + minutes / 60;
-};
+  const [hoursPart = 0, minutesPart = 0] = timeStr.split(':').map(Number)
+  return hoursPart + minutesPart / 60
+}
 
-// Validation
-const isValid = computed(() => {
-  return (
-    selectedIssue.value &&
-    hoursToDecimal(hours.value) > 0 &&
-    hoursToDecimal(hours.value) <= 12 &&
-    comments.value.trim().length > 0 &&
-    spentOn.value
-  );
-});
+const isValid = computed(() =>
+  Boolean(
+    selectedIssue.value
+    && hoursToDecimal(hours.value) > 0
+    && hoursToDecimal(hours.value) <= 12
+    && comments.value.trim().length
+    && spentOn.value
+  )
+)
 
-const submitting = ref(false);
-const toast = useToast();
+const isDirty = computed(() =>
+  Boolean(
+    selectedProject.value
+    || selectedIssue.value
+    || hours.value !== '1:00'
+    || comments.value.trim().length
+    || spentOn.value.compare(today()) !== 0
+  )
+)
+
+const isSubmitDisabled = computed(
+  () => !isValid.value || submitting.value || isEnhancing.value
+)
+
+const toast = useToast()
+
+const formatCalendarDate = (date: CalendarDate) =>
+  `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`
+
+const resetForm = () => {
+  isSyncing.value = true
+  selectedProject.value = null
+  selectedIssue.value = null
+  hours.value = '1:00'
+  comments.value = ''
+  spentOn.value = today()
+  lastSavedAt.value = null
+  nextTick(() => {
+    isSyncing.value = false
+  })
+}
 
 const handleSubmit = async () => {
-  if (!isValid.value) return;
+  if (!isValid.value) return
 
-  submitting.value = true;
+  submitting.value = true
 
   try {
-    const formattedDate = `${spentOn.value.year}-${String(spentOn.value.month).padStart(2, "0")}-${String(spentOn.value.day).padStart(2, "0")}`;
+    const formattedDate = formatCalendarDate(spentOn.value)
 
-    await $fetch("/api/planio/time-entries", {
-      method: "POST",
+    await $fetch('/api/planio/time-entries', {
+      method: 'POST',
       body: {
         issue_id: selectedIssue.value!.id,
         hours: hoursToDecimal(hours.value),
         comments: comments.value,
-        spent_on: formattedDate,
-      },
-    });
+        spent_on: formattedDate
+      }
+    })
 
     toast.add({
-      title: "Time entry created",
+      title: 'Time entry created',
       description: `Logged ${hours.value}h on #${selectedIssue.value!.id}`,
-      color: "success",
-    });
+      color: 'success'
+    })
 
-    // Reset form using store
-    formStore.resetForm();
-    selectedProject.value = null;
-    selectedIssue.value = null;
-    hours.value = "1:00";
-    comments.value = "";
-    const resetDate = new Date();
-    spentOn.value = new CalendarDate(
-      resetDate.getFullYear(),
-      resetDate.getMonth() + 1,
-      resetDate.getDate(),
-    );
-
-    emit("success");
+    resetForm()
+    emit('success')
   } catch (error: any) {
-    console.error("Failed to create time entry:", error);
+    console.error('Failed to create time entry:', error)
     toast.add({
-      title: "Failed to create time entry",
-      description: error?.data?.message || error?.message || "Please try again",
-      color: "error",
-    });
+      title: 'Failed to create time entry',
+      description: error?.data?.message || error?.message || 'Please try again',
+      color: 'error'
+    })
   } finally {
-    submitting.value = false;
+    submitting.value = false
   }
-};
+}
 
 const handleReset = () => {
-  formStore.resetForm();
-  selectedProject.value = null;
-  selectedIssue.value = null;
-  hours.value = "1:00";
-  comments.value = "";
-  const resetDate = new Date();
-  spentOn.value = new CalendarDate(
-    resetDate.getFullYear(),
-    resetDate.getMonth() + 1,
-    resetDate.getDate(),
-  );
+  resetForm()
 
   toast.add({
-    title: "Form reset",
-    description: "All fields have been cleared",
-    color: "neutral",
-  });
-};
+    title: 'Form reset',
+    description: 'All fields have been cleared',
+    color: 'neutral'
+  })
+}
 </script>
 
 <template>
   <UCard>
     <template #header>
       <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-clock" class="size-5 text-primary" />
-        <h3 class="text-lg font-semibold">Log Time</h3>
+        <UIcon
+          name="i-lucide-clock"
+          class="size-5 text-primary"
+        />
+        <h3 class="text-lg font-semibold">
+          Log Time
+        </h3>
       </div>
     </template>
 
-    <form @submit.prevent="handleSubmit" class="space-y-4">
+    <form
+      class="space-y-4"
+      @submit.prevent="handleSubmit"
+    >
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <PlanioProjectSelector v-model="selectedProject" />
         <PlanioIssueSelector
@@ -174,49 +179,48 @@ const handleReset = () => {
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TimeEntriesDatePicker v-model="spentOn" />
-
-        <!-- Hours Input Component -->
-        <TimeEntriesHoursInput v-model="hours" :issue="selectedIssue" />
+        <TimeEntriesHoursInput
+          v-model="hours"
+          :issue="selectedIssue"
+        />
       </div>
 
-      <!-- Description Editor with AI Enhancement -->
       <TimeEntriesDescriptionEditor
         v-model="comments"
         :spent-on="new Date(spentOn.year, spentOn.month - 1, spentOn.day)"
         @enhancing="isEnhancing = $event"
       />
 
-      <!-- Action Buttons -->
-      <div class="flex flex-col gap-2">
-        <UButton
-          type="submit"
-          label="Log Time Entry"
-          icon="i-lucide-check"
-          :loading="submitting"
-          :disabled="!isValid || submitting || isEnhancing"
-          size="lg"
-          block
-        />
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div class="flex w-full flex-col gap-2 md:flex-row md:items-center">
+          <UButton
+            type="submit"
+            label="Log Time Entry"
+            icon="i-lucide-check"
+            :loading="submitting"
+            :disabled="isSubmitDisabled"
+            size="md"
+            class="w-full md:w-auto md:min-w-44"
+          />
 
-        <!-- Reset Button -->
-        <UButton
-          type="button"
-          label="Reset Form"
-          icon="i-lucide-rotate-ccw"
-          color="neutral"
-          variant="outline"
-          :disabled="submitting || isEnhancing || !formStore.isDirty"
-          size="md"
-          block
-          @click="handleReset"
-        />
+          <UButton
+            type="button"
+            label="Reset"
+            icon="i-lucide-rotate-ccw"
+            color="neutral"
+            variant="outline"
+            :disabled="submitting || isEnhancing || !isDirty"
+            size="sm"
+            class="w-full md:w-auto"
+            @click="handleReset"
+          />
+        </div>
 
-        <!-- Last Saved Indicator -->
         <div
-          v-if="formStore.lastSaved"
-          class="text-xs text-center text-muted mt-1"
+          v-if="lastSavedAt"
+          class="text-xs text-center text-muted md:text-right"
         >
-          Last saved {{ useTimeAgo(formStore.lastSaved).value }}
+          Last saved {{ lastSavedAgo }}
         </div>
       </div>
     </form>

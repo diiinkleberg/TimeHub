@@ -7,11 +7,18 @@
     <template #header>
       <div class="flex items-center gap-3">
         <div class="p-2 rounded-lg">
-          <UIcon name="i-lucide-briefcase" class="size-5" />
+          <UIcon
+            name="i-lucide-briefcase"
+            class="size-5"
+          />
         </div>
         <div>
-          <h3 class="text-base font-semibold">Planio</h3>
-          <p class="text-sm text-muted">Primary authentication</p>
+          <h3 class="text-base font-semibold">
+            Planio
+          </h3>
+          <p class="text-sm text-muted">
+            Primary authentication
+          </p>
         </div>
       </div>
     </template>

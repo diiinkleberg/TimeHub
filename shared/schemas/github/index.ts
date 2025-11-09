@@ -1,2 +1,2 @@
-export * from "./commits";
-export * from "./link";
+export * from './commits'
+export * from './link'

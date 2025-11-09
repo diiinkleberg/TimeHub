@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   if (!path.startsWith('/api')) {
     return
   }
-  
+
   const publicApiPrefixes = [
     '/api/auth/',
     '/api/health',
@@ -25,7 +25,6 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-
     const session = await auth.api.getSession({
       headers: event.headers
     })

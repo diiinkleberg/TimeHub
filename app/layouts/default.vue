@@ -1,65 +1,59 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from "@nuxt/ui";
+import type { NavigationMenuItem } from '@nuxt/ui'
 
-const open = ref(false);
+const open = ref(false)
+const route = useRoute()
 
-const links = [
+useDashboard()
+
+const closeSidebar = () => {
+  open.value = false
+}
+
+const baseLinks: NavigationMenuItem[] = [
   {
-    label: "Home",
-    icon: "i-lucide-house",
-    to: "/dashboard",
-    onSelect: () => {
-      open.value = false;
-    },
+    label: 'Home',
+    icon: 'i-lucide-house',
+    to: '/dashboard'
   },
   {
-    label: "Time Entries",
-    icon: "i-lucide-clock",
-    to: "/time-entries",
-    onSelect: () => {
-      open.value = false;
-    },
+    label: 'Time Entries',
+    icon: 'i-lucide-clock',
+    to: '/time-entries'
   },
   {
-    label: "Profile",
-    icon: "i-lucide-user",
-    to: "/profile",
-    onSelect: () => {
-      open.value = false;
-    },
+    label: 'Profile',
+    icon: 'i-lucide-user',
+    to: '/profile'
   },
   {
-    label: "Settings",
-    to: "/settings",
-    icon: "i-lucide-settings",
-    // children: [
-    //   {
-    //     label: "General",
-    //     to: "/settings/general",
-    //     exact: true,
-    //     onSelect: () => {
-    //       open.value = false;
-    //     },
-    //   },
-    //   {
-    //     label: "Integrations",
-    //     to: "/settings/integrations",
-    //     exact: true,
-    //     onSelect: () => {
-    //       open.value = false;
-    //     },
-    //   },
-    // ],
-  },
-] satisfies NavigationMenuItem[];
+    label: 'Settings',
+    icon: 'i-lucide-settings',
+    to: '/settings'
+  }
+]
+
+const links = computed(() =>
+  baseLinks.map(link => ({
+    ...link,
+    onSelect: closeSidebar
+  }))
+)
+
+watch(
+  () => route.path,
+  () => {
+    closeSidebar()
+  }
+)
 
 const groups = computed(() => [
   {
-    id: "links",
-    label: "Go to",
-    items: links,
-  },
-]);
+    id: 'links',
+    label: 'Go to',
+    items: links.value
+  }
+])
 </script>
 
 <template>
@@ -73,10 +67,18 @@ const groups = computed(() => [
       :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
       <template #header="{ collapsed }">
-        <div v-if="!collapsed" class="p-4">
-          <h1 class="text-xl font-bold">TimeHub</h1>
+        <div
+          v-if="!collapsed"
+          class="p-4"
+        >
+          <h1 class="text-xl font-bold">
+            TimeHub
+          </h1>
         </div>
-        <div v-else class="p-4 text-center">
+        <div
+          v-else
+          class="p-4 text-center"
+        >
           <span class="text-xl font-bold">TH</span>
         </div>
       </template>

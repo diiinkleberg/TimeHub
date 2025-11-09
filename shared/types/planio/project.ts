@@ -1,4 +1,4 @@
 export interface SimpleProject {
-  id: number;
-  name: string;
+  id: number
+  name: string
 }

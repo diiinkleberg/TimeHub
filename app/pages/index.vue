@@ -1,51 +1,85 @@
-<script lang="ts" setup>
+<script setup lang="ts">
 definePageMeta({
-  layout: false,
-});
+  layout: false
+})
 
-const features = [
+interface FeatureCard {
+  icon: string
+  title: string
+  description: string
+}
+
+const features: ReadonlyArray<FeatureCard> = [
   {
-    icon: "i-lucide-clock",
-    title: "Quick Time Entry",
+    icon: 'i-lucide-clock',
+    title: 'Quick Time Entry',
+    description: 'Log time faster and more efficiently.'
+  },
+  {
+    icon: 'i-lucide-calendar',
+    title: 'Weekly Overview',
     description:
-      "Log time faster and more efficiently",
+      'Visualise your time entries with interactive charts and summaries.'
   },
   {
-    icon: "i-lucide-calendar",
-    title: "Weekly Overview",
+    icon: 'i-lucide-zap',
+    title: 'Fast & Lightweight',
+    description: 'Built with modern Nuxt tooling for speed and efficiency.'
+  },
+  {
+    icon: 'i-lucide-database',
+    title: 'PlanIO Integration',
+    description: 'Sync projects, issues, and activities directly from PlanIO.'
+  },
+  {
+    icon: 'i-lucide-search',
+    title: 'Smart Search',
+    description: 'Find issues and projects instantly with intelligent search.'
+  },
+  {
+    icon: 'i-lucide-bar-chart-3',
+    title: 'Analytics',
     description:
-      "Visualize your time entries with interactive charts and summaries.",
-  },
+      'Track productivity with detailed, ready-to-share time analytics.'
+  }
+] as const
+
+const steps = [
   {
-    icon: "i-lucide-zap",
-    title: "Fast & Lightweight",
-    description: "Built with modern tools for speed and efficiency",
-  },
-  {
-    icon: "i-lucide-database",
-    title: "PlanIO Integration",
+    title: 'Connect your PlanIO account',
     description:
-      "Seamlessly syncs with your PlanIO projects, issues, and activities",
+      'Securely authenticate with OAuth 2.0 — your credentials stay with PlanIO.',
+    icon: 'i-lucide-link'
   },
   {
-    icon: "i-lucide-search",
-    title: "Smart Search",
-    description: "Find issues and projects quickly with intelligent search",
-  },
-  {
-    icon: "i-lucide-bar-chart-3",
-    title: "Analytics",
+    title: 'Select your project and issue',
     description:
-      "Track your productivity with detailed time tracking analytics",
+      'Use smart search to quickly locate the work item you need to update.',
+    icon: 'i-lucide-search'
   },
-];
+  {
+    title: 'Log your time',
+    description: 'Enter hours and a description. Done in a few seconds.',
+    icon: 'i-lucide-check'
+  }
+] as const
+
+const footerLinks = [
+  { label: 'Privacy', to: '/' },
+  { label: 'Terms', to: '/' }
+] as const
+
+const currentYear = new Date().getFullYear()
 </script>
 
 <template>
   <div class="min-h-screen bg-background">
     <UHeader>
       <template #left>
-        <ULink to="/" class="flex items-center gap-2">
+        <ULink
+          to="/"
+          class="flex items-center gap-2"
+        >
           <AppLogo class="w-auto h-6 shrink-0" />
         </ULink>
       </template>
@@ -70,12 +104,19 @@ const features = [
           <template #header>
             <div class="flex items-center gap-3">
               <div class="p-2 rounded-lg bg-primary/10">
-                <UIcon :name="feature.icon" class="size-6 text-primary" />
+                <UIcon
+                  :name="feature.icon"
+                  class="size-6 text-primary"
+                />
               </div>
-              <h3 class="font-semibold">{{ feature.title }}</h3>
+              <h3 class="font-semibold">
+                {{ feature.title }}
+              </h3>
             </div>
           </template>
-          <p class="text-muted">{{ feature.description }}</p>
+          <p class="text-muted">
+            {{ feature.description }}
+          </p>
         </UCard>
       </div>
     </UPageSection>
@@ -87,38 +128,25 @@ const features = [
     >
       <div class="max-w-4xl mx-auto space-y-12">
         <div
-          v-for="(step, index) in [
-            {
-              title: 'Connect your PlanIO account',
-              description:
-                'Securely authenticate with OAuth 2.0. We never store your password.',
-              icon: 'i-lucide-link',
-            },
-            {
-              title: 'Select your project and issue',
-              description:
-                'Use smart search to quickly find what you\'re working on.',
-              icon: 'i-lucide-search',
-            },
-            {
-              title: 'Log your time',
-              description: 'Enter hours and description. Done in seconds.',
-              icon: 'i-lucide-check',
-            },
-          ]"
-          :key="index"
+          v-for="(step, index) in steps"
+          :key="step.title"
           class="flex gap-6 items-start"
         >
           <div
             class="shrink-0 size-12 rounded-full bg-primary/10 flex items-center justify-center"
           >
-            <UIcon :name="step.icon" class="size-6 text-primary" />
+            <UIcon
+              :name="step.icon"
+              class="size-6 text-primary"
+            />
           </div>
           <div class="flex-1">
             <h3 class="text-xl font-semibold mb-2">
               {{ index + 1 }}. {{ step.title }}
             </h3>
-            <p class="text-muted">{{ step.description }}</p>
+            <p class="text-muted">
+              {{ step.description }}
+            </p>
           </div>
         </div>
       </div>
@@ -129,27 +157,24 @@ const features = [
         <div
           class="flex flex-col md:flex-row items-center justify-between gap-4"
         >
-          <span class="text-sm text-muted">
-            © 2025 TimeHub
-          </span>
+          <span class="text-sm text-muted">© {{ currentYear }} TimeHub</span>
           <div class="flex items-center gap-4 text-sm">
             <NuxtLink
-              to="/"
+              v-for="link in footerLinks"
+              :key="link.label"
+              :to="link.to"
               class="text-muted hover:text-primary transition-colors"
             >
-              Privacy
-            </NuxtLink>
-            <NuxtLink
-              to="/"
-              class="text-muted hover:text-primary transition-colors"
-            >
-              Terms
+              {{ link.label }}
             </NuxtLink>
             <a
               href="https://github.com/skillnetworks/SF_TimeHub"
               class="text-muted hover:text-primary transition-colors"
             >
-              <UIcon name="i-lucide-github" class="size-5" />
+              <UIcon
+                name="i-lucide-github"
+                class="size-5"
+              />
             </a>
           </div>
         </div>

@@ -1,25 +1,24 @@
 <script setup lang="ts">
-import type { PlanioTimeEntry } from "#shared/schemas/planio/time-entry";
+import { usePlanioRecentTimeEntries } from '~/composables/usePlanioTimeEntries'
 
 const {
-  data: timeEntries,
+  entries,
   pending,
   error,
   refresh,
-} = useFetch<PlanioTimeEntry[]>("/api/planio/time-entries", {
-  query: {
-    limit: 10,
-  },
-  default: () => [],
-});
+  hasEntries
+} = usePlanioRecentTimeEntries({ limit: 10 })
 
-const handleSuccess = () => refresh();
+const handleSuccess = () => refresh()
 </script>
 
 <template>
   <UDashboardPanel id="time-entries">
     <template #header>
-      <UDashboardNavbar title="Time Entries" icon="i-lucide-clock">
+      <UDashboardNavbar
+        title="Time Entries"
+        icon="i-lucide-clock"
+      >
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -37,18 +36,18 @@ const handleSuccess = () => refresh();
 
     <template #body>
       <div class="space-y-6">
-        <!-- Time Entry Form -->
         <TimeEntriesTimeEntryForm @success="handleSuccess" />
 
-        <!-- Loading State -->
-        <div v-if="pending" class="flex justify-center py-12">
+        <div
+          v-if="pending"
+          class="flex justify-center py-12"
+        >
           <UIcon
             name="i-lucide-loader-2"
             class="size-8 animate-spin text-primary"
           />
         </div>
 
-        <!-- Error State -->
         <UCard v-else-if="error">
           <div class="text-center py-8">
             <UIcon
@@ -58,25 +57,29 @@ const handleSuccess = () => refresh();
             <h3 class="text-lg font-semibold mb-2">
               Failed to load time entries
             </h3>
-            <UButton label="Retry" variant="ghost" @click="refresh()" />
+            <UButton
+              label="Retry"
+              variant="ghost"
+              @click="refresh()"
+            />
           </div>
         </UCard>
 
-        <!-- Recent Entries List -->
         <TimeEntriesTimeEntryList
-          v-else-if="timeEntries.length > 0"
-          :entries="timeEntries"
+          v-else-if="hasEntries"
+          :entries="entries"
           :pending="pending"
         />
 
-        <!-- Empty State -->
         <UCard v-else>
           <div class="text-center py-12">
             <UIcon
               name="i-lucide-clock"
               class="size-12 mx-auto mb-4 text-muted"
             />
-            <h3 class="text-lg font-semibold mb-2">No time entries found</h3>
+            <h3 class="text-lg font-semibold mb-2">
+              No time entries found
+            </h3>
             <p class="text-sm text-muted">
               Create your first time entry to get started
             </p>

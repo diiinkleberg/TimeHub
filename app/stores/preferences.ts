@@ -1,108 +1,102 @@
-import { defineStore } from "pinia";
-import { whenever } from "@vueuse/core";
+import { defineStore } from 'pinia'
+import { watch } from 'vue'
 
 export const THEME_COLORS = [
-  "red",
-  "orange",
-  "amber",
-  "yellow",
-  "lime",
-  "green",
-  "emerald",
-  "teal",
-  "cyan",
-  "sky",
-  "blue",
-  "indigo",
-  "violet",
-  "purple",
-  "fuchsia",
-  "pink",
-  "rose",
-] as const;
+  'red',
+  'orange',
+  'amber',
+  'yellow',
+  'lime',
+  'green',
+  'emerald',
+  'teal',
+  'cyan',
+  'sky',
+  'blue',
+  'indigo',
+  'violet',
+  'purple',
+  'fuchsia',
+  'pink',
+  'rose'
+] as const
 
 export const NEUTRAL_COLORS = [
-  "slate",
-  "gray",
-  "zinc",
-  "neutral",
-  "stone",
-] as const;
+  'slate',
+  'gray',
+  'zinc',
+  'neutral',
+  'stone'
+] as const
 
-export type ThemeColor = (typeof THEME_COLORS)[number];
-export type NeutralColor = (typeof NEUTRAL_COLORS)[number];
+export type ThemeColor = (typeof THEME_COLORS)[number]
+export type NeutralColor = (typeof NEUTRAL_COLORS)[number]
+
+const DEFAULT_PRIMARY_COLOR: ThemeColor = 'green'
+const DEFAULT_NEUTRAL_COLOR: NeutralColor = 'zinc'
 
 export const usePreferencesStore = defineStore(
-  "preferences",
+  'preferences',
   () => {
-    const primaryColor = ref<ThemeColor>("green");
-    const neutralColor = ref<NeutralColor>("zinc");
-    const cookieConsent = ref<boolean | null>(null);
-    const cookieConsentDate = ref<string | null>(null);
+    const primaryColor = ref<ThemeColor>(DEFAULT_PRIMARY_COLOR)
+    const neutralColor = ref<NeutralColor>(DEFAULT_NEUTRAL_COLOR)
+    const cookieConsent = ref<boolean | null>(null)
+    const cookieConsentDate = ref<string | null>(null)
 
-    // ===== Getters =====
     const isDefaultTheme = computed(
-      () => primaryColor.value === "green" && neutralColor.value === "zinc",
-    );
+      () =>
+        primaryColor.value === DEFAULT_PRIMARY_COLOR
+        && neutralColor.value === DEFAULT_NEUTRAL_COLOR
+    )
 
-    const shouldShowCookieBanner = computed(() => cookieConsent.value === null);
-    const areCookiesAccepted = computed(() => cookieConsent.value === true);
+    const shouldShowCookieBanner = computed(() => cookieConsent.value === null)
+    const areCookiesAccepted = computed(() => cookieConsent.value === true)
 
-    // ===== Actions =====
+    const appConfig = useAppConfig()
 
-    const appConfig = useAppConfig();
-
-    /**
-     * Update primary color
-     * Updates both store (persisted) and appConfig (runtime UI)
-     *
-     * @param color - Color from THEME_COLORS palette
-     */
     function setPrimaryColor(color: ThemeColor) {
-      primaryColor.value = color;
+      if (primaryColor.value === color) {
+        return
+      }
+
+      primaryColor.value = color
     }
 
-    /**
-     * Update neutral color
-     * @param color - Color from NEUTRAL_COLORS palette
-     */
     function setNeutralColor(color: NeutralColor) {
-      neutralColor.value = color;
+      if (neutralColor.value === color) {
+        return
+      }
+
+      neutralColor.value = color
     }
 
     function resetColors() {
-      setPrimaryColor("green");
-      setNeutralColor("zinc");
+      setPrimaryColor(DEFAULT_PRIMARY_COLOR)
+      setNeutralColor(DEFAULT_NEUTRAL_COLOR)
     }
 
     function acceptCookies() {
-      cookieConsent.value = true;
-      cookieConsentDate.value = new Date().toISOString();
+      cookieConsent.value = true
+      cookieConsentDate.value = new Date().toISOString()
     }
 
     function resetCookieConsent() {
-      cookieConsent.value = null;
-      cookieConsentDate.value = null;
+      cookieConsent.value = null
+      cookieConsentDate.value = null
+    }
+
+    const syncThemeColors = () => {
+      appConfig.ui.colors.primary = primaryColor.value
+      appConfig.ui.colors.neutral = neutralColor.value
     }
 
     function initializeAppConfig() {
-      appConfig.ui.colors.primary = primaryColor.value;
-      appConfig.ui.colors.neutral = neutralColor.value;
+      syncThemeColors()
     }
 
-    whenever(
-      () => primaryColor.value,
-      (color) => {
-        appConfig.ui.colors.primary = color;
-      },
-    );
-
-    whenever(
-      () => neutralColor.value,
-      (color) => {
-        appConfig.ui.colors.neutral = color;
-      },
-    );
+    watch([primaryColor, neutralColor], syncThemeColors, {
+      immediate: true
+    })
 
     return {
       // State
@@ -122,13 +116,10 @@ export const usePreferencesStore = defineStore(
       resetColors,
       acceptCookies,
       resetCookieConsent,
-      initializeAppConfig,
-    };
+      initializeAppConfig
+    }
   },
   {
-    /**
-     * Enable automatic cookie persistence
-     */
-    persist: true,
-  },
-);
+    persist: true
+  }
+)

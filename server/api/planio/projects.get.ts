@@ -1,48 +1,44 @@
-import type { SimpleProject } from "#shared/types/planio";
-import { PlanioIssuesResponseSchema } from "#shared/schemas/planio/issue";
-import { getUserAccessToken } from "~~/server/utils/auth";
+import type { SimpleProject } from '#shared/types/planio'
+import { PlanioIssuesResponseSchema } from '#shared/schemas/planio/issue'
+import { getUserAccessToken } from '~~/server/utils/auth'
+import { useServerLogger } from '~~/server/utils/logger'
 
 export default defineEventHandler(async (event) => {
+  const logger = useServerLogger('planio:projects')
   try {
-    const config = useRuntimeConfig();
-    const baseUrl = config.authPlanioBaseUrl;
-    const accessToken = await getUserAccessToken(event, "planio");
-
-    console.log("📁 Fetching projects from issues endpoint...");
+    const config = useRuntimeConfig()
+    const baseUrl = config.authPlanioBaseUrl
+    const accessToken = await getUserAccessToken(event, 'planio')
 
     const response = await $fetch(`${baseUrl}/issues.json`, {
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`
       },
       query: {
-        assigned_to_id: "me",
+        assigned_to_id: 'me',
         limit: 100,
-        status_id: "*",
-      },
-    });
+        status_id: '*'
+      }
+    })
 
-    const { issues } = PlanioIssuesResponseSchema.parse(response);
+    const { issues } = PlanioIssuesResponseSchema.parse(response)
 
     // Extract unique projects from issues
     const uniqueProjects = Array.from(
       new Map(
-        issues.map((issue) => [
+        issues.map(issue => [
           issue.project.id,
           {
             id: issue.project.id,
-            name: issue.project.name,
-          } satisfies SimpleProject,
-        ]),
-      ).values(),
-    );
+            name: issue.project.name
+          } satisfies SimpleProject
+        ])
+      ).values()
+    )
 
-    console.log("📁 Extracted unique projects:", uniqueProjects.length);
-    return uniqueProjects;
+    return uniqueProjects
   } catch (error) {
-    console.error("❌ Error fetching projects:", error);
-    if (error instanceof Error) {
-      console.error("❌ Error message:", error.message);
-    }
-    throw error;
+    logger.error(error, 'Failed to fetch Planio projects')
+    throw error
   }
-});
+})

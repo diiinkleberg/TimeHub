@@ -2,7 +2,6 @@
 import type { PlanioIssue } from '#shared/schemas/planio/issue'
 import type { SimpleProject } from '#shared/types/planio'
 import { CalendarDate } from '@internationalized/date'
-import { useTimeAgo } from '@vueuse/core'
 
 interface Emits {
   (e: 'success'): void
@@ -25,21 +24,6 @@ const toCalendarDate = (date: Date) =>
 const today = () => toCalendarDate(new Date())
 const spentOn = shallowRef(today())
 
-const lastSavedAt = ref<number | null>(null)
-const lastSavedSource = computed(() => lastSavedAt.value ?? Date.now())
-const lastSavedAgo = useTimeAgo(lastSavedSource)
-
-const markLastSaved = () => {
-  if (isSyncing.value) return
-  lastSavedAt.value = Date.now()
-}
-
-watch(selectedProject, markLastSaved)
-watch(selectedIssue, markLastSaved)
-watch(hours, markLastSaved)
-watch(comments, markLastSaved)
-watch(spentOn, markLastSaved)
-
 watch(selectedIssue, (newIssue) => {
   if (!newIssue?.project) return
 
@@ -54,51 +38,41 @@ watch(selectedIssue, (newIssue) => {
   })
 })
 
-const hoursToDecimal = (timeStr: string): number => {
+const hoursToDecimal = (timeStr: string) => {
   const [hoursPart = 0, minutesPart = 0] = timeStr.split(':').map(Number)
   return hoursPart + minutesPart / 60
 }
 
+const hoursDecimal = computed(() => hoursToDecimal(hours.value))
+
 const isValid = computed(() =>
   Boolean(
     selectedIssue.value
-    && hoursToDecimal(hours.value) > 0
-    && hoursToDecimal(hours.value) <= 12
+    && hoursDecimal.value > 0
+    && hoursDecimal.value <= 12
     && comments.value.trim().length
     && spentOn.value
   )
 )
 
-const isDirty = computed(() =>
-  Boolean(
-    selectedProject.value
-    || selectedIssue.value
-    || hours.value !== '1:00'
-    || comments.value.trim().length
-    || spentOn.value.compare(today()) !== 0
-  )
-)
-
 const isSubmitDisabled = computed(
-  () => !isValid.value || submitting.value || isEnhancing.value
+  () => !isValid.value || isEnhancing.value
 )
 
 const toast = useToast()
+const spentOnDate = computed(
+  () => new Date(spentOn.value.year, spentOn.value.month - 1, spentOn.value.day)
+)
 
 const formatCalendarDate = (date: CalendarDate) =>
   `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`
 
 const resetForm = () => {
-  isSyncing.value = true
   selectedProject.value = null
   selectedIssue.value = null
   hours.value = '1:00'
   comments.value = ''
   spentOn.value = today()
-  lastSavedAt.value = null
-  nextTick(() => {
-    isSyncing.value = false
-  })
 }
 
 const handleSubmit = async () => {
@@ -113,7 +87,7 @@ const handleSubmit = async () => {
       method: 'POST',
       body: {
         issue_id: selectedIssue.value!.id,
-        hours: hoursToDecimal(hours.value),
+        hours: hoursDecimal.value,
         comments: comments.value,
         spent_on: formattedDate
       }
@@ -128,7 +102,6 @@ const handleSubmit = async () => {
     resetForm()
     emit('success')
   } catch (error: any) {
-    console.error('Failed to create time entry:', error)
     toast.add({
       title: 'Failed to create time entry',
       description: error?.data?.message || error?.message || 'Please try again',
@@ -187,7 +160,7 @@ const handleReset = () => {
 
       <TimeEntriesDescriptionEditor
         v-model="comments"
-        :spent-on="new Date(spentOn.year, spentOn.month - 1, spentOn.day)"
+        :spent-on="spentOnDate"
         @enhancing="isEnhancing = $event"
       />
 
@@ -209,18 +182,11 @@ const handleReset = () => {
             icon="i-lucide-rotate-ccw"
             color="neutral"
             variant="outline"
-            :disabled="submitting || isEnhancing || !isDirty"
+            :disabled="submitting || isEnhancing"
             size="sm"
             class="w-full md:w-auto"
             @click="handleReset"
           />
-        </div>
-
-        <div
-          v-if="lastSavedAt"
-          class="text-xs text-center text-muted md:text-right"
-        >
-          Last saved {{ lastSavedAgo }}
         </div>
       </div>
     </form>

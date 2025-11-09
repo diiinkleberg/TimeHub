@@ -2,7 +2,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxt/ui',
-    '@nuxt/test-utils',
+    '@nuxt/test-utils/module',
     '@nuxt/fonts',
     '@vueuse/nuxt',
     '@pinia/nuxt',

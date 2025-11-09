@@ -2,7 +2,7 @@
 import type { PlanioIssue } from '#shared/schemas/planio/issue'
 
 interface Props {
-  modelValue: string // HH:MM format
+  modelValue: string
   issue?: PlanioIssue | null
 }
 
@@ -15,29 +15,21 @@ const MINUTES_STEP = 15
 const MIN_TOTAL_MINUTES = 15
 const MAX_TOTAL_MINUTES = 12 * 60
 
-const clampMinutes = (minutes: number) =>
+const clamp = (minutes: number) =>
   Math.max(MIN_TOTAL_MINUTES, Math.min(MAX_TOTAL_MINUTES, minutes))
 
-const parseTime = (timeStr: string) => {
-  const [rawHours = 0, rawMinutes = 0] = timeStr
-    .split(':')
-    .map(value => Number.parseInt(value, 10) || 0)
-
-  const totalMinutes = clampMinutes(rawHours * 60 + rawMinutes)
-
-  return {
-    hours: Math.floor(totalMinutes / 60),
-    minutes: totalMinutes % 60,
-    totalMinutes
-  }
+const toMinutes = (value: string) => {
+  const [rawHours = '0', rawMinutes = '0'] = value.split(':')
+  const hours = Number.parseInt(rawHours, 10) || 0
+  const minutes = Number.parseInt(rawMinutes, 10) || 0
+  return clamp(hours * 60 + minutes)
 }
 
-const formatTime = (hours: number, minutes: number) =>
-  `${hours}:${String(minutes).padStart(2, '0')}`
-
-const sanitizeTime = (value: string) => {
-  const { hours, minutes } = parseTime(value)
-  return formatTime(hours, minutes)
+const toTime = (totalMinutes: number) => {
+  const minutes = clamp(totalMinutes)
+  const hours = Math.floor(minutes / 60)
+  const remainder = minutes % 60
+  return `${hours}:${String(remainder).padStart(2, '0')}`
 }
 
 const localValue = computed({
@@ -45,18 +37,23 @@ const localValue = computed({
   set: (value: string) => emit('update:modelValue', value)
 })
 
-// Increment/decrement by 15 minutes
-const adjustTime = (delta: number) => {
-  const { totalMinutes } = parseTime(localValue.value)
-  const nextTotal = clampMinutes(totalMinutes + delta)
+const currentMinutes = computed(() => toMinutes(localValue.value))
 
-  localValue.value = formatTime(
-    Math.floor(nextTotal / 60),
-    nextTotal % 60
-  )
+const adjustTime = (delta: number) => {
+  localValue.value = toTime(currentMinutes.value + delta)
 }
 
-// Quick hour buttons
+const handleQuickSelect = (value: string) => {
+  localValue.value = toTime(toMinutes(value))
+}
+
+const handleBlur = () => {
+  localValue.value = toTime(currentMinutes.value)
+}
+
+const canDecrease = computed(() => currentMinutes.value > MIN_TOTAL_MINUTES)
+const canIncrease = computed(() => currentMinutes.value < MAX_TOTAL_MINUTES)
+
 const quickHours = [
   { label: '15m', value: '0:15' },
   { label: '30m', value: '0:30' },
@@ -66,66 +63,39 @@ const quickHours = [
   { label: '8h', value: '8:00' }
 ]
 
-// Convert HH:MM to decimal hours
-const hoursToDecimal = (timeStr: string): number => {
-  const [hours = 0, minutes = 0] = timeStr.split(':').map(Number)
-  return hours + minutes / 60
-}
+const minutesToDecimal = (minutes: number) => minutes / 60
 
-const canDecrease = computed(
-  () => parseTime(localValue.value).totalMinutes > MIN_TOTAL_MINUTES
-)
-
-const canIncrease = computed(
-  () => parseTime(localValue.value).totalMinutes < MAX_TOTAL_MINUTES
-)
-
-// Time tracking info - now reactive to current input
-const timeInfo = computed(() => {
-  if (!props.issue) return null
-
-  const spent = props.issue.total_spent_hours || 0
-  const estimated = props.issue.total_estimated_hours
-
-  if (!estimated) return null
-
-  // Add current input to spent time for preview
-  const currentInputHours = hoursToDecimal(props.modelValue)
-  const projectedSpent = spent + currentInputHours
-
-  const remaining = Math.max(0, estimated - projectedSpent)
-  const isOvertime = projectedSpent > estimated
-
-  // Calculate percentage - ensure it's always a valid number
-  const actualPercentage = (projectedSpent / estimated) * 100
-  const percentage = Math.min(100, actualPercentage)
-
-  return {
-    spent,
-    estimated,
-    currentInput: currentInputHours,
-    projectedSpent,
-    remaining,
-    percentage: isNaN(percentage) ? 0 : percentage, // Prevent NaN
-    actualPercentage: isNaN(actualPercentage) ? 0 : actualPercentage,
-    isOvertime
-  }
-})
-
-// Convert decimal to HH:MM
 const formatDecimalHours = (decimal: number) => {
   const hours = Math.floor(decimal)
   const minutes = Math.round((decimal - hours) * 60)
   return `${hours}:${String(minutes).padStart(2, '0')}`
 }
 
-const handleBlur = () => {
-  localValue.value = sanitizeTime(localValue.value)
-}
+const timeInfo = computed(() => {
+  const issue = props.issue
+  const estimated = issue?.total_estimated_hours
+  if (!issue || !estimated) return null
 
-const handleQuickSelect = (value: string) => {
-  localValue.value = sanitizeTime(value)
-}
+  const spent = issue.total_spent_hours ?? 0
+  const current = minutesToDecimal(currentMinutes.value)
+  const projected = spent + current
+  const remaining = Math.max(0, estimated - projected)
+  const rawPercentage = estimated > 0 ? (projected / estimated) * 100 : 0
+  const percentage = Number.isFinite(rawPercentage)
+    ? Math.min(100, rawPercentage)
+    : 0
+
+  return {
+    spent,
+    estimated,
+    currentInput: current,
+    projectedSpent: projected,
+    remaining,
+    percentage,
+    actualPercentage: Number.isFinite(rawPercentage) ? rawPercentage : 0,
+    isOvertime: projected > estimated
+  }
+})
 </script>
 
 <template>
@@ -134,7 +104,6 @@ const handleQuickSelect = (value: string) => {
     required
   >
     <div class="space-y-3">
-      <!-- Time Input with Ticker -->
       <div class="flex items-center gap-2 max-w-xs">
         <UButton
           icon="i-lucide-minus"
@@ -165,7 +134,6 @@ const handleQuickSelect = (value: string) => {
         />
       </div>
 
-      <!-- Quick Hour Buttons -->
       <div class="flex gap-1 flex-wrap">
         <UButton
           v-for="quick in quickHours"
@@ -178,7 +146,6 @@ const handleQuickSelect = (value: string) => {
         />
       </div>
 
-      <!-- Time Tracking Progress (if issue selected with estimates) -->
       <div
         v-if="timeInfo"
         class="p-4 bg-elevated border border-default rounded-lg space-y-3"
@@ -192,9 +159,7 @@ const handleQuickSelect = (value: string) => {
           />
         </div>
 
-        <!-- Two-column layout: Stats on left, Preview on right -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Left: Current Stats -->
           <div class="grid grid-cols-2 gap-3 text-center">
             <div>
               <div class="text-xs text-muted mb-1">
@@ -214,7 +179,6 @@ const handleQuickSelect = (value: string) => {
             </div>
           </div>
 
-          <!-- Right: After Logging Preview -->
           <div class="grid grid-cols-2 gap-3 text-center md:border-l md:border-default md:pl-4">
             <div>
               <div class="text-xs text-primary mb-1">
@@ -238,7 +202,6 @@ const handleQuickSelect = (value: string) => {
           </div>
         </div>
 
-        <!-- Progress Bar -->
         <div class="space-y-1">
           <UProgress
             :model-value="timeInfo.percentage"
@@ -247,7 +210,6 @@ const handleQuickSelect = (value: string) => {
             :color="timeInfo.isOvertime ? 'error' : 'primary'"
           />
 
-          <!-- Percentage indicator -->
           <div class="flex items-center justify-between text-xs">
             <span class="text-muted">
               {{ formatDecimalHours(timeInfo.projectedSpent) }} / {{ formatDecimalHours(timeInfo.estimated) }}h

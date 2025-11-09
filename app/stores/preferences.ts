@@ -42,6 +42,7 @@ export const usePreferencesStore = defineStore(
     const neutralColor = ref<NeutralColor>(DEFAULT_NEUTRAL_COLOR)
     const cookieConsent = ref<boolean | null>(null)
     const cookieConsentDate = ref<string | null>(null)
+    const startingPage = ref<string>('dashboard')
 
     const isDefaultTheme = computed(
       () =>
@@ -70,19 +71,9 @@ export const usePreferencesStore = defineStore(
       neutralColor.value = color
     }
 
-    function resetColors() {
-      setPrimaryColor(DEFAULT_PRIMARY_COLOR)
-      setNeutralColor(DEFAULT_NEUTRAL_COLOR)
-    }
-
     function acceptCookies() {
       cookieConsent.value = true
       cookieConsentDate.value = new Date().toISOString()
-    }
-
-    function resetCookieConsent() {
-      cookieConsent.value = null
-      cookieConsentDate.value = null
     }
 
     const syncThemeColors = () => {
@@ -97,6 +88,8 @@ export const usePreferencesStore = defineStore(
     watch([primaryColor, neutralColor], syncThemeColors, {
       immediate: true
     })
+
+
 
     return {
       // State
@@ -113,9 +106,7 @@ export const usePreferencesStore = defineStore(
       // Actions
       setPrimaryColor,
       setNeutralColor,
-      resetColors,
       acceptCookies,
-      resetCookieConsent,
       initializeAppConfig
     }
   },

@@ -27,14 +27,22 @@ export const useLinkedAccounts = async () => {
     unlinkGithubAccount
   } = await useAuth()
 
-  const refresh = async () => {
-    loading.value = true
+  const setLoading = (value: boolean) => {
+    loading.value = value
+  }
+
+  const refresh = async (showSpinner = true) => {
+    if (showSpinner) {
+      setLoading(true)
+    }
 
     try {
       const response = await listAccounts()
       accounts.value = response?.data ?? []
     } finally {
-      loading.value = false
+      if (showSpinner) {
+        setLoading(false)
+      }
       initialized.value = true
     }
   }
@@ -47,26 +55,28 @@ export const useLinkedAccounts = async () => {
     accounts.value.some(account => account.providerId === 'github')
   )
 
-  const linkGithub = async () => {
-    loading.value = true
+  const withLoading = async (task: () => Promise<void>) => {
+    setLoading(true)
 
     try {
-      await linkGithubAccount()
-      await refresh()
+      await task()
     } finally {
-      loading.value = false
+      setLoading(false)
     }
   }
 
-  const unlinkGithub = async () => {
-    loading.value = true
+  const linkGithub = async () => {
+    await withLoading(async () => {
+      await linkGithubAccount()
+      await refresh(false)
+    })
+  }
 
-    try {
+  const unlinkGithub = async () => {
+    await withLoading(async () => {
       await unlinkGithubAccount()
-      await refresh()
-    } finally {
-      loading.value = false
-    }
+      await refresh(false)
+    })
   }
 
   return {

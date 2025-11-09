@@ -62,7 +62,7 @@ async function createAuth(): Promise<UseAuthReturn> {
     signInWithPlanio,
     linkGithubAccount,
     listAccounts,
-    signOut,
+  signOut,
     unlinkGithubAccount
   }
 }

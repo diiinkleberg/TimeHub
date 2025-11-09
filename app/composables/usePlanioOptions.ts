@@ -1,4 +1,5 @@
 import { computed, watch, type Ref } from 'vue'
+import { whenever } from '@vueuse/core'
 import type { PlanioIssue } from '#shared/schemas/planio/issue'
 import type { SimpleProject } from '#shared/types/planio'
 
@@ -54,11 +55,13 @@ export function usePlanioIssueOptions(params: UsePlanioIssueOptionsParams = {}) 
     {
       default: () => [],
       server: false,
-      immediate: enabled.value
+      immediate: false
     }
   )
 
-  watch([query, enabled], () => {
+  whenever(enabled, () => state.refresh())
+
+  watch(query, () => {
     if (enabled.value) {
       state.refresh()
     }

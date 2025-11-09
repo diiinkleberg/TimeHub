@@ -8,10 +8,10 @@ import {
 import type { Range } from '~/types'
 
 const dateRange = ref<Range>({
-  start: startOfWeek(today(getLocalTimeZone()), 'en-US').toDate(
+  start: startOfWeek(today(getLocalTimeZone()), 'de-DE').toDate(
     getLocalTimeZone()
   ),
-  end: endOfWeek(today(getLocalTimeZone()), 'en-US').toDate(getLocalTimeZone())
+  end: endOfWeek(today(getLocalTimeZone()), 'de-DE').toDate(getLocalTimeZone())
 })
 
 // Generate unique key for chart re-rendering

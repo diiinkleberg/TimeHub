@@ -23,16 +23,6 @@ const colorMode = useColorMode()
             Choose your preferred accent color
           </p>
         </div>
-        <UAlert
-          v-if="colorMode.value === 'light'"
-          title="Watch Out!"
-          description="Changes in the background color are only visible in light mode "
-          icon="streamline:invisible-1"
-          class="bg-primary/10 mt-1 text-primary"
-          :ui="{
-            icon: 'size-11'
-          }"
-        />
       </div>
     </template>
     <UFormField label="Select Base Color">

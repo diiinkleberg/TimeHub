@@ -81,9 +81,7 @@ const formatDate = (dateString: string) => {
         target="_blank"
         class="flex items-center justify-between py-4 px-2 -mx-2 rounded-md hover:bg-elevated/50 transition-colors group"
       >
-        <!-- Entry Details -->
         <div class="flex-1 min-w-0 flex items-start gap-3">
-          <!-- Entry ID Badge -->
           <UBadge
             variant="soft"
             color="primary"
@@ -94,16 +92,13 @@ const formatDate = (dateString: string) => {
           </UBadge>
 
           <div class="flex-1 min-w-0 space-y-1.5">
-            <!-- Description/Comments as main title -->
             <div
               class="font-medium text-base text-default group-hover:text-primary transition-colors line-clamp-2"
             >
               {{ entry.comments || "No description" }}
             </div>
 
-            <!-- Issue Name & Project Info -->
             <div class="flex flex-col gap-1 text-sm">
-              <!-- Issue Name (if available) -->
               <div
                 v-if="entry.issue"
                 class="flex items-center gap-1.5 text-muted"
@@ -117,7 +112,6 @@ const formatDate = (dateString: string) => {
                 </span>
               </div>
 
-              <!-- Project & Date -->
               <div class="flex items-center gap-2 text-muted">
                 <UIcon
                   name="i-lucide-folder"
@@ -135,7 +129,6 @@ const formatDate = (dateString: string) => {
           </div>
         </div>
 
-        <!-- Hours & Activity -->
         <div class="flex items-center gap-3 shrink-0 ml-4">
           <div class="text-right">
             <div class="font-bold text-xl text-primary font-mono">

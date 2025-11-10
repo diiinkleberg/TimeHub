@@ -29,6 +29,8 @@ jobs:
 
       - name: Apply Prisma Migrations
         run: pnpm run db:push
+        env:
+          DATABASE_URL: ${{ secreets.DATABSE_URL }}
 
       - name: Ensure NuxtHub module is installed
         run: pnpx nuxthub@latest ensure

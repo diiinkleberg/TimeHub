@@ -1,0 +1,73 @@
+# syntax=docker/dockerfile:1.7
+ARG NODE_VERSION=22-alpine
+FROM node:${NODE_VERSION} AS base
+
+WORKDIR /app
+
+# enable corepack so pnpm is available
+RUN corepack enable
+
+# Install dev dependencies (cached)
+FROM base AS deps
+ENV NODE_ENV=development
+COPY package.json pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm \
+  pnpm install --frozen-lockfile
+
+# Build stage: generate Prisma client and build Nuxt
+FROM base AS build
+ENV NODE_ENV=production
+
+# bring dev node_modules so codegen can run
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Generate Prisma client (writes into node_modules/@prisma and node_modules/.prisma)
+# (do NOT run prisma db:push/migrate here)
+RUN pnpm run db:generate
+
+# Build Nuxt / Nitro output
+RUN pnpm run build
+
+# Install production dependencies only
+FROM base AS prod-deps
+ENV NODE_ENV=production
+COPY package.json pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm \
+  pnpm install --frozen-lockfile --prod
+
+# Copy generated Prisma client artifacts from build into prod node_modules
+# (prisma generates node_modules/@prisma and node_modules/.prisma)
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=build /app/node_modules/@prisma/client ./node_modules/@prisma/client
+
+# Final runtime image
+FROM node:${NODE_VERSION} AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+# utilities for healthcheck
+RUN apk add --no-cache curl
+
+# non-root user
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser
+
+# copy runtime deps and built output
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=build /app/.output ./.output
+COPY --from=build /app/package.json ./package.json
+# copy runtime config if needed
+COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
+
+USER appuser
+
+EXPOSE 3000
+ENV PORT=3000
+ENV HOST=0.0.0.0
+
+# healthcheck expects a /health route
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD curl -fsS http://localhost:3000/health || exit 1
+
+CMD ["node", ".output/server/index.mjs"]

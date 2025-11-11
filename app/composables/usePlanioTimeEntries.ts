@@ -1,4 +1,3 @@
-import { computed, unref, type Ref } from 'vue'
 import type { PlanioTimeEntry } from '#shared/schemas/planio/time-entry'
 
 interface UsePlanioRecentTimeEntriesOptions {

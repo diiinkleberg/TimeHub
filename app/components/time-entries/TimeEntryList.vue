@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { PlanioTimeEntry } from '#shared/schemas/planio/time-entry'
 import { format } from 'date-fns'
 

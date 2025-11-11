@@ -7,7 +7,6 @@ export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event)
     const projectId = query.project_id as string | undefined
-    const issueIds = query.issue_id as string | undefined
     const limit = query.limit as string | undefined
 
     const config = useRuntimeConfig()
@@ -15,18 +14,11 @@ export default defineEventHandler(async (event) => {
 
     const accessToken = await getUserAccessToken(event, 'planio')
 
-    // When issue IDs are provided we fetch those explicitly; otherwise default to the user's open work.
-    const baseQuery = issueIds
-      ? { issue_id: issueIds }
-      : {
+    const queryParams = {
           assigned_to: 'me',
           status_id: 'open',
-          ...(projectId && { project_id: projectId })
-        }
-
-    const queryParams = {
-      ...baseQuery,
-      ...(limit && { limit })
+          ...(projectId && { project_id: projectId }),
+          ...(limit && { limit }) 
     }
 
     const response = await $fetch(`${baseUrl}/issues.json`, {

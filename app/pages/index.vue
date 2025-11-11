@@ -3,12 +3,6 @@ definePageMeta({
   layout: false
 })
 
-interface FeatureCard {
-  icon: string
-  title: string
-  description: string
-}
-
 const features = [
   {
     icon: 'i-lucide-clock',

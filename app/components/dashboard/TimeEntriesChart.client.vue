@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, toRef, watch } from 'vue'
 import {
   VisXYContainer,
   VisStackedBar,

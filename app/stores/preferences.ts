@@ -1,6 +1,3 @@
-import { defineStore } from 'pinia'
-import { watch } from 'vue'
-
 export const THEME_COLORS = [
   'red',
   'orange',

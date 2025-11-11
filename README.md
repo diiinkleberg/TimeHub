@@ -1,26 +1,15 @@
 # TimeHub
 
-A time tracking application built with Nuxt 4, Prisma ORM, and Better Auth.
+Planio Time Tracking Wrapper built with Nuxt 4, Prisma ORM, and Better Auth.
 
 [![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
-
-## Features
-
-- 🔐 **Authentication**: Better Auth with GitHub and Planio OAuth
-- 🗄️ **Database**: SQL Server with Prisma ORM
-- 🎨 **UI**: Nuxt UI with Tailwind CSS
-- 🧪 **Testing**: Vitest + Playwright (coming soon)
-- 📦 **Type-Safe**: Full TypeScript support
-
----
-
-## Quick Start
 
 ### Prerequisites
 
 - Node.js 20+
 - pnpm
-- SQL Server (local or remote)
+- SQL Server (local or remote) with TCP/IP enabled!
+- Planio Application with this callback URL: `http://localhost:3000/api/auth/oauth2/callback/planio` for development
 
 ### Installation
 
@@ -65,139 +54,6 @@ Visit `http://localhost:3000` 🚀
 
 ---
 
-## Documentation
-
-- 📁 [Project Structure](#project-structure)
-- 🔧 [Environment Variables](#environment-variables)
-- 🗄️ [Database Configuration](#database-configuration)
-- 🚀 [Deployment Guide](#deployment)
-- 🐛 [Troubleshooting](#troubleshooting)
-
----
-
-## Project Structure
-
-```
-TimeHub/
-├── app/                     # Application code (Nuxt 4 app/ directory)
-│   ├── assets/              # CSS and static assets
-│   ├── components/          # Vue components
-│   │   └── auth/            # Authentication components
-│   ├── composables/         # Vue composables
-│   ├── layouts/             # Page layouts
-│   ├── lib/                 # Client-side libraries
-│   ├── middleware/          # Client-side middleware
-│   ├── pages/               # Application pages
-│   ├── stores/              # Pinia stores
-│   ├── types/               # TypeScript type definitions
-│   ├── app.config.ts        # Nuxt UI configuration
-│   ├── app.vue              # Root component
-│   └── error.vue            # Error page
-├── server/                  # Server-side code
-│   ├── api/                 # API endpoints
-│   │   └── auth/            # Better Auth endpoints
-│   ├── lib/                 # Server utilities
-│   │   ├── db/              # Database configuration
-│   │   │   ├── schema.prisma    # Prisma schema
-│   │   │   └── prisma.ts        # Prisma Client instance
-│   │   └── auth.config.ts   # Better Auth configuration
-│   ├── middleware/          # Server middleware
-│   └── utils/               # Server utilities
-├── shared/                  # Shared types (client + server)
-│   └── types/               # TypeScript types
-├── .env                     # Environment variables
-├── nuxt.config.ts           # Nuxt configuration
-├── prisma.config.ts         # Prisma configuration
-└── package.json             # Dependencies and scripts
-```
-
----
-
-## Database Configuration
-
-### Prisma Setup
-
-This project uses **Prisma ORM**.
-
-**File structure:**
-```
-server/lib/db/
-├── schema.prisma        # Database schema
-└── prisma.ts            # Singleton Prisma Client instance
-
-node_modules/
-└── @prisma/client/      # Generated Prisma Client (default location)
-```
-
-### Schema Overview
-
-The database uses four main models for Better Auth:
-
-- **User**: User accounts with email verification
-- **Session**: Active user sessions with token management
-- **Account**: OAuth provider accounts (GitHub, Planio)
-- **Verification**: Email verification tokens
-
-### Development Workflow
-
-```bash
-# After changing schema.prisma
-pnpm run db:generate     # Regenerate Prisma Client
-pnpm run db:push         # Sync to database (dev)
-
-# For production-ready migrations
-pnpm run db:migrate      # Create migration files
-```
-
-### Prisma Studio
-
-Browse and edit your database with Prisma's GUI:
-
-```bash
-pnpm run db:studio
-```
-
-Visit `http://localhost:5555`
-
----
-
-## Deployment
-
-### Building for Production
-
-```bash
-# Build the application
-pnpm run build
-
-# The .output/ folder contains everything needed to run
-```
-
-### Running in Production
-
-**Option 1: Node.js**
-```bash
-node .output/server/index.mjs
-```
-
-### Environment Variables in Production
-
-Set these on your production server:
-```bash
-export DATABASE_URL="sqlserver://production-server:1433;..."
-export BETTER_AUTH_SECRET="production-secret-32-chars"
-export BETTER_AUTH_URL="https://timehub.company.com"
-export NODE_ENV="production"
-```
-
-Or copy `.env` alongside `.output/`:
-```bash
-cp .env /var/www/timehub/
-cd /var/www/timehub
-node .output/server/index.mjs
-```
-
----
-
 ## Troubleshooting
 
 ### Common Issues
@@ -239,24 +95,13 @@ export default defineNuxtConfig({
 });
 ```
 
-**Why this is needed:** [Read the technical explanation](#technical-details-prisma--nitro-bundling)
-
-</details>
-
-<details>
-<summary><b>Hot reload not working</b></summary>
-
-**Solution:** Restart dev server with clean cache:
-```bash
-rm -rf .nuxt node_modules/.vite
-pnpm dev
-```
+**Why this is needed:** See [Prisma & Nitro Bundling](#prisma--nitro-bundling) section below.
 
 </details>
 
 ---
 
-## Technical Details: Prisma & Nitro Bundling
+## Prisma & Nitro Bundling
 
 <details>
 <summary><b>Why special Nitro configuration is required</b></summary>
@@ -292,15 +137,6 @@ nitro: {
   }
 }
 ```
-
-### What Happens During Build
-
-1. ✅ Nuxt bundles your application code
-2. ✅ Prisma Client stays in `node_modules/@prisma/client/` (not bundled)
-3. ✅ Query engine binaries included in the output
-4. ✅ Modern ESM target handles `import.meta.url` correctly
-5. ✅ At runtime, server loads Prisma from `node_modules`
-
 ### Generator Configuration
 
 ```prisma
@@ -318,163 +154,9 @@ generator client {
 | `engineType = "library"` | Uses Node.js native modules (better for ESM) |
 | `binaryTargets` | Includes query engines for dev + production OS |
 
-### Singleton Pattern
-
-The `server/lib/db/prisma.ts` uses a singleton to prevent connection exhaustion:
-
-```typescript
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
-
-if (process.env.NODE_ENV !== "production") {
-  globalThis.prismaGlobal = prisma; // Survives HMR in dev
-}
-```
-
-**Benefits:**
-- ✅ Only one Prisma Client instance
-- ✅ Prevents connection pool exhaustion
-- ✅ Persists across hot reloads in dev
-
-### Prisma Configuration File
-
-The `prisma.config.ts` points to the custom schema location:
-
-```typescript
-import "dotenv/config";
-import { defineConfig, env } from "prisma/config";
-
-export default defineConfig({
-  schema: "server/lib/db/schema.prisma",  // Custom schema location
-  migrations: {
-    path: "server/lib/db/migrations",      // Custom migrations location
-  },
-  engine: "classic",
-  datasource: {
-    url: env("DATABASE_URL"),
-  },
-});
-```
-
-This allows keeping the schema in `server/lib/db/` while the generated client goes to the standard `node_modules/@prisma/client/` location.
-
-</details>
-
----
-
 ## Resources
 
 - [Nuxt 4 Documentation](https://nuxt.com)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [Better Auth Documentation](https://better-auth.com)
 - [Nuxt UI Documentation](https://ui.nuxt.com)
-
-
-
-
-
-```
-<script setup lang="ts">
-import type { PlanioProject } from "#/shared/types";
-
-interface Props {
-  modelValue?: PlanioProject | null;
-}
-
-interface Emits {
-  (e: "update:modelValue", value: PlanioProject | null): void;
-  (e: "projectSelected", project: PlanioProject): void;
-}
-
-const props = withDefaults(defineProps<Props>(), { modelValue: null });
-const emit = defineEmits<Emits>();
-
-const {
-  data: projects,
-  pending,
-  error,
-} = useFetch<PlanioProject[]>("/api/planio/projects", {
-  server: false,
-  default: () => [],
-});
-
-const projectItems = computed(() =>
-  projects.value.map((project) => ({
-    label: project.name,
-    value: project.id,
-    project,
-  }))
-);
-
-const handleSelection = (selectedItem: { label: string; value: number; project: PlanioProject }) => {
-  if (selectedItem?.project) {
-    emit("update:modelValue", selectedItem.project);
-    emit("projectSelected", selectedItem.project);
-  } else {
-    emit("update:modelValue", null);
-  }
-};
-
-const selectedItem = computed(() =>
-  props.modelValue
-    ? projectItems.value.find((item) => item.value === props.modelValue!.id)
-    : undefined
-);
-</script>
-
-<template>
-  <div class="space-y-2">
-    <label class="block text-sm font-medium text-highlighted">
-      Select Project
-    </label>
-
-    <div
-      v-if="pending"
-      class="flex items-center gap-3 px-4 py-3 w-full h-12 bg-elevated border border-default rounded-lg transition-all duration-200"
-    >
-      <UIcon
-        name="i-lucide-loader-2"
-        class="w-4 h-4 animate-spin text-accent"
-      />
-      <span class="text-sm text-muted font-medium">Loading projects...</span>
-    </div>
-
-    <div
-      v-else-if="error"
-      class="text-sm text-red-400 bg-red-900/20 p-2 rounded border border-red-800"
-    >
-      Failed to load projects
-    </div>
-
-    <USelectMenu
-      v-else
-      :model-value="selectedItem"
-      :items="projectItems"
-      placeholder="Search projects..."
-      leading-icon="octicon:project-roadmap-24"
-      class="w-full h-10"
-      :search-input="{
-        placeholder: 'Search by name or identifier...'
-      }"
-      :ui="{
-        base: selectedItem ? 'bg-elevated border-primary text-primary font-bold' : 'bg-elevated border-default text-default',
-        leadingIcon: selectedItem ? 'text-primary' : 'text-muted',
-        placeholder: 'text-muted',
-        trailingIcon: 'text-muted',
-        content: 'bg-elevated border-default shadow-xl',
-        viewport: 'p-1',
-        item: 'text-default hover:bg-muted data-[highlighted]:bg-accented data-[highlighted]:text-highlighted rounded-md px-3 py-2',
-        itemLabel: 'text-default',
-        input: 'bg-elevated  text-default placeholder:text-muted p-0.5'
-      }"
-      @update:model-value="handleSelection"
-    >
-      <template #item-label="{ item }">
-        <div class="flex flex-col">
-          <span class="font-medium text-default">{{ item.label }}</span>
-          <span class="text-xs text-muted">ID: {{ item.value }}</span>
-        </div>
-      </template>
-    </USelectMenu>
-  </div>
-</template>
-```

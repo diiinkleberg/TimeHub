@@ -1,4 +1,3 @@
-import { computed, type Ref } from 'vue'
 import type { PlanioIssue } from '#shared/schemas/planio/issue'
 import type { PlanioTimeEntry } from '#shared/schemas/planio/time-entry'
 import type { Range } from '~/types'

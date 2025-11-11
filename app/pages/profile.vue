@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useLinkedAccounts } from "~/composables/useLinkedAccounts";
 
 const { user } = await useAuth();
 const { isGithubLinked } = await useLinkedAccounts();

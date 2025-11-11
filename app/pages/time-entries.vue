@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { usePlanioRecentTimeEntries } from '~/composables/usePlanioTimeEntries'
 
 const {
   entries,
@@ -22,15 +21,7 @@ const handleSuccess = () => refresh()
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-        <template #right>
-          <UButton
-            icon="i-lucide-refresh-cw"
-            variant="ghost"
-            color="neutral"
-            :loading="pending"
-            @click="refresh()"
-          />
-        </template>
+        
       </UDashboardNavbar>
     </template>
 

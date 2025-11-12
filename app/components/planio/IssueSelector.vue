@@ -71,6 +71,16 @@ const selectedItem = computed(() =>
     : undefined
 )
 
+const hasSelection = computed(() => Boolean(selectedItem.value))
+
+const selectMenuUi = computed(() => ({
+  base: hasSelection.value
+    ? 'bg-elevated border-primary text-primary font-semibold'
+    : 'bg-elevated border-default text-default',
+  leadingIcon: hasSelection.value ? 'text-primary' : 'text-muted',
+  placeholder: 'text-muted'
+}))
+
 const handleSelection = (value: unknown) => {
   const item
     = value && typeof value === 'object' && 'issue' in value
@@ -167,6 +177,7 @@ const getIssueUrl = (issueId: number) => `${planioBaseUrl}/issues/${issueId}`
         searchable
         :filter-fields="['id', 'subject', 'description', 'priority', 'project']"
         class="w-full h-10"
+  :ui="selectMenuUi"
         @update:model-value="handleSelection"
       >
         <!-- Dropdown item display -->

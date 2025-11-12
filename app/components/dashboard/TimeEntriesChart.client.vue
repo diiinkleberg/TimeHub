@@ -7,18 +7,8 @@ import {
 } from '@unovis/vue'
 import { StackedBar } from '@unovis/ts'
 import type { Range } from '~/types'
-import {
-  usePlanioIssues,
-  usePlanioTimeEntries,
-  useStackedTimeEntriesData,
-  type TimeEntriesChartDay
-} from '~/composables/usePlanioReporting'
 
-interface Props {
-  dateRange: Range
-}
-
-const props = defineProps<Props>()
+const props = defineProps<{ dateRange: Range }>()
 const range = toRef(props, 'dateRange')
 
 const {
@@ -68,6 +58,14 @@ watch(focused, (isFocused) => {
     refreshEntries()
   }
 })
+
+// Tooltip container
+const tooltipContainer = ref<HTMLElement>()
+onMounted(() => {
+  tooltipContainer.value = document.body
+})
+
+
 </script>
 
 <template>
@@ -126,13 +124,14 @@ watch(focused, (isFocused) => {
           :data="chartData"
           :height="350"
           :margin="{ top: 10, right: 20, bottom: 60, left: 60 }"
+          :padding="{ top: 10, right: 10, bottom: 0, left: 10 }"
         >
           <VisStackedBar
             :x="xAccessor"
             :y="yAccessors"
             :color="barColor"
             :rounded-corners="4"
-            :bar-padding="0.3"
+            :bar-padding="0.5"
             :bar-max-width="90"
           />
 
@@ -141,7 +140,7 @@ watch(focused, (isFocused) => {
             :num-ticks="chartData.length"
             :tick-format="xTickFormat"
             :grid-line="false"
-            :tick-text-angle="-45"
+            :tick-text-angle="0"
           />
 
           <VisAxis
@@ -151,7 +150,10 @@ watch(focused, (isFocused) => {
             :grid-line="true"
           />
 
-          <VisTooltip :triggers="{ [StackedBar.selectors.bar]: tooltipTemplate }" />
+          <VisTooltip 
+            :triggers="{ [StackedBar.selectors.bar]: tooltipTemplate }"
+            :container="tooltipContainer"
+          />
         </VisXYContainer>
       </div>
 
@@ -194,10 +196,27 @@ watch(focused, (isFocused) => {
 <style scoped>
 .vis-xy-container {
   --vis-stacked-bar-cursor: pointer;
-  --vis-axis-tick-color: rgb(var(--color-muted));
-  --vis-axis-grid-color: rgb(var(--color-default) / 0.1);
-  --vis-axis-tick-label-color: rgb(var(--color-muted));
-  --vis-axis-label-color: rgb(var(--color-highlighted));
+  --vis-axis-tick-color: rgb(var(--background-color-muted));
+  --vis-axis-grid-color: rgb(var(--background-color-default) / 0.1);
+  --vis-axis-tick-label-color: rgb(var(--background-color-muted));
+  --vis-axis-label-color: rgb(var(--background-color-highlighted));
   --vis-font-family: inherit;
+  --vis-tooltip-background-color: transparent;
+  --vis-tooltip-border-color: transparent;
+  --vis-tooltip-shadow-color: transparent;
+  --vis-tooltip-text-color: inherit;
+  --vis-tooltip-padding: 0;
+  --vis-tooltip-backdrop-filter: none;
+}
+</style>
+
+<style>
+div[class*='css-'][class*='-tooltip'],
+div[class*='tooltip'][class*='css-'] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 </style>

@@ -69,17 +69,17 @@ const groups = computed(() => [
       <template #header="{ collapsed }">
         <div
           v-if="!collapsed"
-          class="p-4"
+          class="p-4 flex items-center"
         >
           <h1 class="text-xl font-bold">
-            TimeHub
+        TimeHub
           </h1>
         </div>
         <div
           v-else
-          class="p-4 text-center"
+          class="p-4 flex w-full justify-center items-center"
         >
-          <span class="text-xl font-bold">TH</span>
+          <span class="text-xl font-bold tracking-wide">TH</span>
         </div>
       </template>
 

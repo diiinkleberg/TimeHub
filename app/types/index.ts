@@ -1,6 +1,11 @@
-export type Period = 'daily' | 'weekly' | 'monthly'
 
-export interface Range {
-  start: Date
-  end: Date
+
+export interface DateRange {
+	start: Date
+	end: Date
 }
+
+// Backwards-compatible alias used across the app
+export type Range = DateRange
+
+

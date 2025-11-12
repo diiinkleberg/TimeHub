@@ -37,6 +37,16 @@ const selectedItem = computed(() =>
     : undefined
 )
 
+const hasSelection = computed(() => Boolean(selectedItem.value))
+
+const selectMenuUi = computed(() => ({
+  base: hasSelection.value
+    ? 'bg-elevated border-primary text-primary font-semibold'
+    : 'bg-elevated border-default text-default',
+  leadingIcon: hasSelection.value ? 'text-primary' : 'text-muted',
+  placeholder: 'text-muted'
+}))
+
 const isProjectOption = (option: unknown): option is (typeof projectItems.value)[number] =>
   typeof option === 'object' && option !== null && 'project' in option
 
@@ -84,13 +94,7 @@ onMounted(() => {
         searchable
         :filter-fields="['label', 'value']"
         class="w-full h-10"
-        :ui="{
-          base: selectedItem
-            ? 'bg-elevated border-primary text-primary font-bold'
-            : 'bg-elevated border-default text-default',
-          leadingIcon: selectedItem ? 'text-primary' : 'text-muted',
-          placeholder: 'text-muted'
-        }"
+        :ui="selectMenuUi"
         @update:model-value="handleSelection"
       >
         <template #item-label="{ item }">

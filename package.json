@@ -15,7 +15,10 @@
     "auth:generate": "npx @better-auth/cli generate --config server/lib/auth.config.ts --output server/lib/db/schema.prisma",
     "db:push": "prisma db push --schema=./server/lib/db/schema.prisma",
     "db:migrate": "prisma migrate dev --schema=./server/lib/db/schema.prisma",
-    "db:studio": "prisma studio --schema=./server/lib/db/schema.prisma"
+    "db:studio": "prisma studio --schema=./server/lib/db/schema.prisma",
+    "docker:build": "docker build --pull --rm -f DOCKERFILE -t timehub:latest .",
+    "docker:start": "docker run --rm -p 3000:3000 --env-file .env.docker --name timehub timehub:latest",
+    "docker:stop": "docker stop timehub"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.71",
@@ -47,6 +50,7 @@
     "happy-dom": "^20.0.10",
     "playwright-core": "^1.56.1",
     "prisma": "^6.18.0",
+    "tailwindcss": "4.1.17",
     "typescript": "^5.9.3",
     "vitest": "^4.0.8",
     "vue-tsc": "^3.1.2"

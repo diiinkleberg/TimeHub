@@ -56,6 +56,7 @@ export default defineNuxtConfig({
   },
 
   nitro: {
+    preset: "node-server",
     externals: {
       inline: [
         "@prisma/client",

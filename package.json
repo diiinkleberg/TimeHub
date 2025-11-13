@@ -18,7 +18,8 @@
     "db:studio": "prisma studio --schema=./server/lib/db/schema.prisma",
     "docker:build": "docker build --pull --rm -f DOCKERFILE -t timehub:latest .",
     "docker:start": "docker run --rm -p 3000:3000 --env-file .env.docker --name timehub timehub:latest",
-    "docker:stop": "docker stop timehub"
+    "docker:stop": "docker stop timehub",
+    "start": "node .output/server/index.mjs"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.71",

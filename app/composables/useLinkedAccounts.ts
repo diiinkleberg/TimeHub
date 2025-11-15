@@ -8,6 +8,7 @@ interface LinkedAccountSummary {
 }
 
 export const useLinkedAccounts = async () => {
+  const isClient = import.meta.client
   const accounts = useState<LinkedAccountSummary[]>(
     'linked-accounts',
     () => []
@@ -29,6 +30,10 @@ export const useLinkedAccounts = async () => {
   }
 
   const refresh = async (showSpinner = true) => {
+    if (!isClient) {
+      return
+    }
+
     if (showSpinner) {
       setLoading(true)
     }
@@ -36,6 +41,8 @@ export const useLinkedAccounts = async () => {
     try {
       const response = await listAccounts()
       accounts.value = response?.data ?? []
+    } catch (error) {
+      console.error('Failed to load linked accounts:', error)
     } finally {
       if (showSpinner) {
         setLoading(false)
@@ -45,7 +52,11 @@ export const useLinkedAccounts = async () => {
   }
 
   if (!initialized.value) {
-    await refresh()
+    if (isClient) {
+      await refresh()
+    } else {
+      initialized.value = true
+    }
   }
 
   const isGithubLinked = computed(() =>

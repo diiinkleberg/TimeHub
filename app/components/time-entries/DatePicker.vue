@@ -87,7 +87,7 @@ const handleCalendarUpdate = (value: any) => {
 
       <UButton
         label="Today"
-        color="neutral"
+        :color="isToday ? 'neutral' : 'primary'"
         variant="soft"
         size="md"
         :disabled="isToday"

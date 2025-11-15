@@ -8,12 +8,7 @@ const props = defineProps<{
 
 if (props.error?.statusCode === 401) {
   await clearError({
-    redirect: {
-      path: '/',
-      query: {
-        authExpired: '1'
-      }
-    }
+    redirect: '/?authExpired=1'
   })
 }
 

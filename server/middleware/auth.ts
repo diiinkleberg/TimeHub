@@ -1,4 +1,5 @@
 import { auth } from '~~/server/lib/auth.config'
+import { H3Event, createError } from 'h3'
 
 /**
  * @global Authentication middleware for protecting API routes.
@@ -7,7 +8,7 @@ import { auth } from '~~/server/lib/auth.config'
  *              If a valid session is found, the user information is attached to the event context.
  *              If no valid session is found, a 401 Unauthorized error is thrown.
  */
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event: H3Event) => {
   const path = event.path
 
   if (!path.startsWith('/api')) {

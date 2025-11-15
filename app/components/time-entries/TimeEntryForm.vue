@@ -165,7 +165,17 @@ const handleReset = () => {
       />
 
       <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div class="flex w-full flex-col gap-2 md:flex-row md:items-center">
+          <UButton
+            type="button"
+            label="Reset"
+            icon="i-lucide-rotate-ccw"
+            color="warning"
+            variant="outline"
+            :disabled="submitting || isEnhancing"
+            size="md"
+            class="w-full md:w-auto"
+            @click="handleReset"
+          />
           <UButton
             type="submit"
             label="Log Time Entry"
@@ -175,19 +185,6 @@ const handleReset = () => {
             size="md"
             class="w-full md:w-auto md:min-w-44"
           />
-
-          <UButton
-            type="button"
-            label="Reset"
-            icon="i-lucide-rotate-ccw"
-            color="neutral"
-            variant="outline"
-            :disabled="submitting || isEnhancing"
-            size="sm"
-            class="w-full md:w-auto"
-            @click="handleReset"
-          />
-        </div>
       </div>
     </form>
   </UCard>

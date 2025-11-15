@@ -103,7 +103,7 @@ const discardEnhanced = () => {
         />
         <div
           v-if="isEnhancing"
-          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm"
+          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80"
         >
           <UIcon
             name="i-lucide-loader-2"

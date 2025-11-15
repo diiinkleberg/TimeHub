@@ -45,7 +45,10 @@ const currentYear = new Date().getFullYear()
   <div class="flex min-h-screen flex-col">
     <UHeader>
       <template #left>
-        <ULink to="/" class="flex items-center gap-2">
+        <ULink
+          to="/"
+          class="flex items-center gap-2"
+        >
           <AppLogo class="w-auto h-6 shrink-0" />
         </ULink>
       </template>
@@ -57,7 +60,11 @@ const currentYear = new Date().getFullYear()
     </UHeader>
 
     <main class="flex-1">
-      <UPageSection id="features" title="Everything you need" class="py-24">
+      <UPageSection
+        id="features"
+        title="Everything you need"
+        class="py-24"
+      >
         <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           <UCard
             v-for="feature in features"
@@ -67,7 +74,10 @@ const currentYear = new Date().getFullYear()
             <template #header>
               <div class="flex items-center gap-3">
                 <div class="rounded-lg bg-primary/10 p-2">
-                  <UIcon :name="feature.icon" class="size-6 text-primary" />
+                  <UIcon
+                    :name="feature.icon"
+                    class="size-6 text-primary"
+                  />
                 </div>
                 <h3 class="font-semibold">
                   {{ feature.title }}

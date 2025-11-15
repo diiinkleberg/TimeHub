@@ -1,13 +1,15 @@
 <script setup lang="ts">
-
-const { user } = await useAuth();
-const { isGithubLinked } = await useLinkedAccounts();
+const { user } = await useAuth()
+const { isGithubLinked } = await useLinkedAccounts()
 </script>
 
 <template>
   <UDashboardPanel id="profile">
     <template #header>
-      <UDashboardNavbar title="Profile" icon="i-lucide-user">
+      <UDashboardNavbar
+        title="Profile"
+        icon="i-lucide-user"
+      >
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
@@ -51,10 +53,10 @@ const { isGithubLinked } = await useLinkedAccounts();
                   {{
                     user?.createdAt
                       ? new Date(user.createdAt).toLocaleDateString("de-DE", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric"
+                      })
                       : "N/A"
                   }}
                 </dd>
@@ -65,7 +67,10 @@ const { isGithubLinked } = await useLinkedAccounts();
                   GitHub
                 </dt>
                 <dd>
-                  <UBadge :color="isGithubLinked ? 'success' : 'warning'" variant="soft">
+                  <UBadge
+                    :color="isGithubLinked ? 'success' : 'warning'"
+                    variant="soft"
+                  >
                     {{ isGithubLinked ? "Linked" : "Not linked" }}
                   </UBadge>
                 </dd>

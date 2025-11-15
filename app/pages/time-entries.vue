@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 const {
   entries,
   pending,
@@ -21,7 +20,6 @@ const handleSuccess = () => refresh()
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
-        
       </UDashboardNavbar>
     </template>
 

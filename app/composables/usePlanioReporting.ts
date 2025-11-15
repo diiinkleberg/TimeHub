@@ -156,8 +156,7 @@ export function useStackedTimeEntriesData(
 
       if (issueRecord) {
         set.add(`#${issueRecord.id}: ${issueRecord.subject}`)
-      }
-      else {
+      } else {
         set.add('No Issue')
       }
     })

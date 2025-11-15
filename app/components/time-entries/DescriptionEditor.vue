@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { useClipboard, useVModel } from '@vueuse/core'
+import { useVModel } from '@vueuse/core'
 
 interface Props {
   modelValue: string
@@ -21,13 +20,6 @@ const isEnhancing = ref(false)
 const showEnhanced = ref(false)
 const tokensUsed = ref(0)
 const toast = useToast()
-
-type ClipboardReturn = ReturnType<typeof useClipboard> & {
-  read?: () => Promise<string | undefined>
-}
-
-const clipboard = useClipboard({ legacy: true }) as ClipboardReturn
-const { isSupported: isClipboardSupported } = clipboard
 
 const charCount = computed(() => description.value.length)
 const hasDescription = computed(() => description.value.trim().length > 0)
@@ -92,28 +84,32 @@ const discardEnhanced = () => {
 
 <template>
   <div class="space-y-5">
-    <UFormField label="Work Description" required class="space-y-3">
+    <UFormField
+      label="Work Description"
+      required
+      class="space-y-3"
+    >
       <div class="relative">
         <UTextarea
+          v-model="description"
           size="lg"
           autoresize
           color="neutral"
-          v-model="description"
           :rows="5"
           :disabled="isEnhancing"
           class="w-full"
           placeholder="Describe what you worked on... (notes, bullet points, or paste any text)"
           :aria-busy="isEnhancing"
         />
-          <div
-            v-if="isEnhancing"
-            class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm"
-          >
-            <UIcon
-              name="i-lucide-loader-2"
-              class="size-5 animate-spin text-primary"
-            />
-          </div>
+        <div
+          v-if="isEnhancing"
+          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm"
+        >
+          <UIcon
+            name="i-lucide-loader-2"
+            class="size-5 animate-spin text-primary"
+          />
+        </div>
       </div>
 
       <template #hint>
@@ -126,25 +122,30 @@ const discardEnhanced = () => {
           </span>
           <div>
             <UButton
-              :icon="isEnhancing ? 'i-lucide-loader-2' : 'i-lucide-sparkles'"
+              :icon="isEnhancing ? 'i-lucide-loader-2 animate-spin' : 'i-lucide-sparkles'"
               :label="isEnhancing ? 'Enhancing…' : 'Enhance with AI'"
               color="primary"
               variant="solid"
               size="sm"
               :disabled="!hasDescription || isEnhancing"
               @click="enhanceDescription"
-            >
-            </UButton>
+            />
           </div>
         </div>
       </template>
     </UFormField>
 
-    <UCard v-if="showEnhanced" class="border-2 border-primary/20 bg-primary/5">
+    <UCard
+      v-if="showEnhanced"
+      class="border-2 border-primary/20 bg-primary/5"
+    >
       <template #header>
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-sparkles" class="size-4 text-primary" />
+            <UIcon
+              name="i-lucide-sparkles"
+              class="size-4 text-primary"
+            />
             <h4 class="text-sm font-semibold text-highlighted">
               AI Enhanced Result
             </h4>

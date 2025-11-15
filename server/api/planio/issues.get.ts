@@ -15,10 +15,10 @@ export default defineEventHandler(async (event) => {
     const accessToken = await getUserAccessToken(event, 'planio')
 
     const queryParams = {
-          assigned_to: 'me',
-          status_id: 'open',
-          ...(projectId && { project_id: projectId }),
-          ...(limit && { limit }) 
+      assigned_to: 'me',
+      status_id: 'open',
+      ...(projectId && { project_id: projectId }),
+      ...(limit && { limit })
     }
 
     const response = await $fetch(`${baseUrl}/issues.json`, {

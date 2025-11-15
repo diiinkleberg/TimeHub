@@ -1,5 +1,3 @@
-
-
 interface LinkedAccountSummary {
   id?: string
   providerId: string

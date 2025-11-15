@@ -64,8 +64,6 @@ const tooltipContainer = ref<HTMLElement>()
 onMounted(() => {
   tooltipContainer.value = document.body
 })
-
-
 </script>
 
 <template>
@@ -123,8 +121,8 @@ onMounted(() => {
         <VisXYContainer
           :data="chartData"
           :height="350"
-          :margin="{ top: 10, right: 20, bottom: 60, left: 60 }"
-          :padding="{ top: 10, right: 10, bottom: 0, left: 10 }"
+          :margin="{ top: 5, right: 15, bottom: 5, left: 5 }"
+          :padding="{ top: 0, right: 10, bottom: 0, left: 5 }"
         >
           <VisStackedBar
             :x="xAccessor"
@@ -150,7 +148,7 @@ onMounted(() => {
             :grid-line="true"
           />
 
-          <VisTooltip 
+          <VisTooltip
             :triggers="{ [StackedBar.selectors.bar]: tooltipTemplate }"
             :container="tooltipContainer"
           />

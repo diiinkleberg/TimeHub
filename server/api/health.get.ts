@@ -1,5 +1,3 @@
-
-
 export default defineEventHandler(() => {
   return {
     status: 'ok',
@@ -7,6 +5,6 @@ export default defineEventHandler(() => {
     app: {
       name: process.env.APP_NAME,
       env: process.env.NODE_ENV
-    },
+    }
   }
 })

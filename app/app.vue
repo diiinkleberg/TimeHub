@@ -10,13 +10,17 @@ const themeColor = computed(() =>
   colorMode.value === 'dark' ? '#1b1718' : '#ffffff'
 )
 
+const faviconHref = computed(() =>
+  colorMode.value === 'dark' ? '/brand_light.svg' : '/brand_dark.svg'
+)
+
 useHead(() => ({
   meta: [
     { charset: 'utf-8' },
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
     { key: 'theme-color', name: 'theme-color', content: themeColor.value }
   ],
-  link: [{ rel: 'icon', href: '/favicon.ico' }],
+  link: [{ rel: 'icon', type: 'image/svg+xml', href: faviconHref.value }],
   htmlAttrs: {
     lang: 'en'
   }

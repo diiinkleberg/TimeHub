@@ -177,7 +177,7 @@ const getIssueUrl = (issueId: number) => `${planioBaseUrl}/issues/${issueId}`
         searchable
         :filter-fields="['id', 'subject', 'description', 'priority', 'project']"
         class="w-full h-10"
-  :ui="selectMenuUi"
+        :ui="selectMenuUi"
         @update:model-value="handleSelection"
       >
         <!-- Dropdown item display -->

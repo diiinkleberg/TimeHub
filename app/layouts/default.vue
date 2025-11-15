@@ -40,6 +40,12 @@ const links = computed(() =>
   }))
 )
 
+const logoSrc = computed(() =>
+  useColorMode().value === 'dark'
+    ? '/brand_light.svg'
+    : '/brand_dark.svg'
+)
+
 watch(
   () => route.path,
   () => {
@@ -69,17 +75,20 @@ const groups = computed(() => [
       <template #header="{ collapsed }">
         <div
           v-if="!collapsed"
-          class="p-4 flex items-center"
+          class="w-full flex justify-center items-center p-4"
         >
-          <h1 class="text-xl font-bold">
-        TimeHub
-          </h1>
+          <img
+            :src="logoSrc"
+            alt="TimeHub Logo"
+            class="h-12 w-auto mr-2"
+          >
         </div>
         <div
           v-else
-          class="p-4 flex w-full justify-center items-center"
+          class="p-4 flex w-full justify-center items-center font-bold"
         >
-          <span class="text-xl font-bold tracking-wide">TH</span>
+          <h1>SF</h1>
+          <!-- <span class="text-xl font-bold tracking-wide">TH</span> -->
         </div>
       </template>
 

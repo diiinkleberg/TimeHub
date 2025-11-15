@@ -1,9 +1,21 @@
 <script setup lang="ts">
 import type { NuxtError } from '#app'
+import { clearError } from '#app'
 
-defineProps<{
+const props = defineProps<{
   error: NuxtError
 }>()
+
+if (props.error?.statusCode === 401) {
+  await clearError({
+    redirect: {
+      path: '/',
+      query: {
+        authExpired: '1'
+      }
+    }
+  })
+}
 
 useSeoMeta({
   title: 'Page not found',

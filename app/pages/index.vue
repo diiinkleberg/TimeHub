@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+
 definePageMeta({
   layout: false
 })
@@ -38,6 +40,37 @@ const features = [
   }
 ]
 
+const route = useRoute()
+const router = useRouter()
+const { signInWithPlanio } = await useAuth()
+
+const sessionExpired = computed(() => route.query.authExpired === '1')
+const reauthLoading = ref(false)
+
+const dismissSessionExpired = async () => {
+  if (!sessionExpired.value) {
+    return
+  }
+
+  const nextQuery = { ...route.query }
+  delete nextQuery.authExpired
+
+  await router.replace({
+    path: route.path,
+    query: nextQuery
+  })
+}
+
+const handleReauth = async () => {
+  reauthLoading.value = true
+
+  try {
+    await signInWithPlanio()
+  } finally {
+    reauthLoading.value = false
+  }
+}
+
 const currentYear = new Date().getFullYear()
 </script>
 
@@ -60,6 +93,43 @@ const currentYear = new Date().getFullYear()
     </UHeader>
 
     <main class="flex-1">
+      <div
+        v-if="sessionExpired"
+        class="px-4 pt-6 mx-auto w-full max-w-3xl"
+      >
+        <UAlert
+          color="warning"
+          variant="soft"
+          icon="i-lucide-alert-triangle"
+          title="Session expired"
+        >
+          <template #description>
+            <p class="text-sm">
+              Your session ended due to inactivity. Please sign in again to keep using TimeHub.
+            </p>
+          </template>
+          <template #actions>
+            <div class="flex flex-wrap gap-2">
+              <UButton
+                size="xs"
+                color="primary"
+                :loading="reauthLoading"
+                @click="handleReauth"
+              >
+                Sign in again
+              </UButton>
+              <UButton
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                @click="dismissSessionExpired"
+              >
+                Dismiss
+              </UButton>
+            </div>
+          </template>
+        </UAlert>
+      </div>
       <UPageSection
         id="features"
         title="Everything you need"

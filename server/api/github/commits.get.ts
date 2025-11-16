@@ -1,4 +1,5 @@
 import { Octokit } from '@octokit/core'
+import { GitHubCommitsResponseSchema } from '#shared/schemas/github/commits'
 import { getUserAccessToken } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -7,6 +8,7 @@ export default defineEventHandler(async (event) => {
     const repoFullName = (query.repo as string) || (query.full_name as string)
     const since = query.since as string | undefined
     const until = query.until as string | undefined
+    const requestedDate = query.date as string | undefined
     const limit = Number(query.limit) || 20
 
     if (!repoFullName) {
@@ -41,13 +43,41 @@ export default defineEventHandler(async (event) => {
       }
     )
 
-    return commits.slice(0, limit).map(commit => ({
-      sha: commit.sha.substring(0, 7),
-      message: commit.commit.message.split('\n')[0],
-      date: commit.commit.author?.date || commit.commit.committer?.date,
-      url: commit.html_url,
-      repo: repoFullName
-    }))
+    const mapped = commits.slice(0, limit).map((commit) => {
+      const message = commit.commit.message?.trim() ?? ''
+      const [firstLine = ''] = message.split('\n')
+      const summary = firstLine.trim() || '(no commit message)'
+      const date = commit.commit.author?.date
+        || commit.commit.committer?.date
+        || new Date().toISOString()
+
+      return {
+        sha: commit.sha,
+        shortSha: commit.sha.substring(0, 7),
+        summary,
+        message: message || summary,
+        date,
+        url: commit.html_url,
+        repo: repoFullName,
+        author: {
+          name: commit.commit.author?.name ?? commit.author?.login ?? null,
+          login: commit.author?.login ?? null,
+          avatarUrl: commit.author?.avatar_url ?? commit.committer?.avatar_url ?? null
+        }
+      }
+    })
+
+    const dateLabel = requestedDate
+      || (since ? new Date(since).toISOString().slice(0, 10) : undefined)
+      || new Date().toISOString().slice(0, 10)
+
+    return GitHubCommitsResponseSchema.parse({
+      success: true,
+      date: dateLabel,
+      repo: repoFullName,
+      count: mapped.length,
+      data: mapped
+    })
   } catch (error: any) {
     console.error('GitHub commits error:', error)
 

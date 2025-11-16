@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { useVModel } from '@vueuse/core'
+import type { GitHubCommitSummary } from '#shared/schemas/github/commits'
 
 interface Props {
   modelValue: string
   spentOn?: Date
+  commits?: GitHubCommitSummary[]
 }
 
 interface Emits {
@@ -11,7 +13,9 @@ interface Emits {
   (e: 'enhancing', value: boolean): void
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  commits: () => []
+})
 const emit = defineEmits<Emits>()
 
 const description = useVModel(props, 'modelValue', emit)
@@ -21,8 +25,9 @@ const showEnhanced = ref(false)
 const tokensUsed = ref(0)
 const toast = useToast()
 
-const charCount = computed(() => description.value.length)
 const hasDescription = computed(() => description.value.trim().length > 0)
+const commitContext = computed(() => props.commits ?? [])
+const commitsForAi = computed(() => commitContext.value.slice(0, 10))
 
 watch(isEnhancing, value => emit('enhancing', value))
 
@@ -40,7 +45,8 @@ const enhanceDescription = async () => {
     }>('/api/ai/enhance-description', {
       method: 'POST',
       body: {
-        description: description.value
+        description: description.value,
+        commits: commitsForAi.value
       }
     })
 
@@ -114,12 +120,6 @@ const discardEnhanced = () => {
 
       <template #hint>
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <span
-            class="text-sm font-medium"
-            :class="charCount > 0 ? 'text-primary' : 'text-muted'"
-          >
-            {{ charCount }} characters
-          </span>
           <div>
             <UButton
               :icon="isEnhancing ? 'i-lucide-loader-2 animate-spin' : 'i-lucide-sparkles'"

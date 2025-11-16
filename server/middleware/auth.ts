@@ -1,5 +1,6 @@
 import { auth } from '~~/server/lib/auth.config'
-import { H3Event, createError } from 'h3'
+import type { H3Event } from 'h3'
+import { createError } from 'h3'
 
 /**
  * @global Authentication middleware for protecting API routes.

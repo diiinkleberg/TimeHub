@@ -38,6 +38,26 @@ export const GitHubCommitSchema = z.object({
 })
 
 /**
+ * Simplified commit info used inside TimeHub UI
+ */
+export const GitHubCommitSummarySchema = z.object({
+  sha: z.string(),
+  shortSha: z.string(),
+  summary: z.string(),
+  message: z.string(),
+  date: z.iso.datetime(),
+  url: z.url(),
+  repo: z.string(),
+  author: z
+    .object({
+      name: z.string().nullable(),
+      login: z.string().nullable(),
+      avatarUrl: z.string().url().nullable()
+    })
+    .nullable()
+})
+
+/**
  * GitHub commits search API response
  */
 export const GitHubCommitsSearchResponseSchema = z.object({
@@ -52,13 +72,15 @@ export const GitHubCommitsSearchResponseSchema = z.object({
 export const GitHubCommitsResponseSchema = z.object({
   success: z.boolean(),
   date: z.iso.date(),
+  repo: z.string(),
   count: z.number(),
-  data: z.array(GitHubCommitSchema)
+  data: z.array(GitHubCommitSummarySchema)
 })
 
 // Type exports
 export type GitHubCommitAuthor = z.infer<typeof GitHubCommitAuthorSchema>
 export type GitHubCommit = z.infer<typeof GitHubCommitSchema>
+export type GitHubCommitSummary = z.infer<typeof GitHubCommitSummarySchema>
 export type GitHubCommitsSearchResponse = z.infer<
   typeof GitHubCommitsSearchResponseSchema
 >

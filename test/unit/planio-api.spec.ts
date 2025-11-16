@@ -126,7 +126,7 @@ describe('GET /api/planio/projects', () => {
         makeIssue({ id: 2 }),
         makeIssue({ id: 3, project: { id: 11, name: 'Beta' } })
       ]
-    });
+    })
 
     const handler = await registerHandler('/api/planio/projects', projectsHandlerPromise)
     const response = await callHandler(handler, 'http://localhost/api/planio/projects')
@@ -149,7 +149,7 @@ describe('GET /api/planio/issues', () => {
     // Arrange: Planio response shaped to pass through schema validation
     fetchMock.mockResolvedValueOnce({
       issues: [makeIssue({ id: 7 })]
-    });
+    })
 
     const handler = await registerHandler('/api/planio/issues', issuesHandlerPromise)
     const response = await callHandler(handler, 'http://localhost/api/planio/issues?project_id=42&limit=25')
@@ -173,7 +173,7 @@ describe('GET /api/planio/time-entries', () => {
     // Arrange: planio returns a single time entry so we can assert exact propagation
     fetchMock.mockResolvedValueOnce({
       time_entries: [makeTimeEntry()]
-    });
+    })
 
     const handler = await registerHandler('/api/planio/time-entries', timeEntriesGetHandlerPromise)
     const response = await callHandler(handler, 'http://localhost/api/planio/time-entries?from=2025-01-01&to=2025-01-31&limit=50')
@@ -198,8 +198,8 @@ describe('GET /api/planio/time-entries', () => {
     const error = Object.assign(new Error('Planio failed'), {
       status: 403,
       data: { errors: ['authorization failed'] }
-    });
-    fetchMock.mockRejectedValueOnce(error);
+    })
+    fetchMock.mockRejectedValueOnce(error)
 
     const handler = await registerHandler('/api/planio/time-entries', timeEntriesGetHandlerPromise)
     const response = await callHandler(handler, 'http://localhost/api/planio/time-entries')
@@ -214,7 +214,7 @@ describe('GET /api/planio/time-entries', () => {
 describe('POST /api/planio/time-entries', () => {
   it('validates input and forwards payload to Planio', async () => {
     // Arrange: successful Planio creation to confirm our payload contract and happy path response
-    fetchMock.mockResolvedValueOnce({});
+    fetchMock.mockResolvedValueOnce({})
 
     const handler = await registerHandler('/api/planio/time-entries', timeEntriesPostHandlerPromise)
     const payload: PlanioCreateTimeEntryInput = {
@@ -267,8 +267,8 @@ describe('POST /api/planio/time-entries', () => {
 
   it('maps Planio 422 responses to descriptive errors', async () => {
     // Arrange: mimic Planio validation failure so we surface a helpful error to the client
-  const rejection = Object.assign(new Error('unprocessable'), { statusCode: 422 });
-  fetchMock.mockRejectedValueOnce(rejection);
+    const rejection = Object.assign(new Error('unprocessable'), { statusCode: 422 })
+    fetchMock.mockRejectedValueOnce(rejection)
 
     const handler = await registerHandler('/api/planio/time-entries', timeEntriesPostHandlerPromise)
 

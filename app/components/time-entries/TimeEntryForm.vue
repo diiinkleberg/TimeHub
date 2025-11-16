@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { GitHubCommitSummary } from '#shared/schemas/github/commits'
 import type { PlanioIssue } from '#shared/schemas/planio/issue'
 import type { SimpleProject } from '#shared/types/planio'
 import { CalendarDate } from '@internationalized/date'
@@ -13,9 +14,9 @@ const selectedProject = ref<SimpleProject | null>(null)
 const selectedIssue = ref<PlanioIssue | null>(null)
 const hours = ref('1:00')
 const comments = ref('')
+const selectedCommits = ref<GitHubCommitSummary[]>([])
 const isEnhancing = ref(false)
 const isSettingFromIssue = ref(false)
-const isSyncing = ref(false)
 const submitting = ref(false)
 
 const toCalendarDate = (date: Date) =>
@@ -73,6 +74,7 @@ const resetForm = () => {
   hours.value = '1:00'
   comments.value = ''
   spentOn.value = today()
+  selectedCommits.value = []
 }
 
 const handleSubmit = async () => {
@@ -158,33 +160,39 @@ const handleReset = () => {
         />
       </div>
 
+      <TimeEntriesGitHubCommitSelector
+        v-model="selectedCommits"
+        :spent-on="spentOnDate"
+      />
+
       <TimeEntriesDescriptionEditor
         v-model="comments"
         :spent-on="spentOnDate"
+        :commits="selectedCommits"
         @enhancing="isEnhancing = $event"
       />
 
       <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <UButton
-            type="button"
-            label="Reset"
-            icon="i-lucide-rotate-ccw"
-            color="warning"
-            variant="outline"
-            :disabled="submitting || isEnhancing"
-            size="md"
-            class="w-full md:w-auto"
-            @click="handleReset"
-          />
-          <UButton
-            type="submit"
-            label="Log Time Entry"
-            icon="i-lucide-check"
-            :loading="submitting"
-            :disabled="isSubmitDisabled"
-            size="md"
-            class="w-full md:w-auto md:min-w-44"
-          />
+        <UButton
+          type="button"
+          label="Reset"
+          icon="i-lucide-rotate-ccw"
+          color="warning"
+          variant="outline"
+          :disabled="submitting || isEnhancing"
+          size="md"
+          class="w-full md:w-auto"
+          @click="handleReset"
+        />
+        <UButton
+          type="submit"
+          label="Log Time Entry"
+          icon="i-lucide-check"
+          :loading="submitting"
+          :disabled="isSubmitDisabled"
+          size="md"
+          class="w-full md:w-auto md:min-w-44"
+        />
       </div>
     </form>
   </UCard>

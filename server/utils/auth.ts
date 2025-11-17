@@ -1,6 +1,5 @@
 import { auth } from '~~/server/lib/auth.config'
 import { toWebRequest, type H3Event } from 'h3'
-import prisma from '../lib/db/prisma'
 
 /**
  * Get user's access token for a specific OAuth provider
@@ -27,20 +26,21 @@ export async function getUserAccessToken(
     })
   }
 
-  // Get account for provider
-  const account = await prisma.account.findFirst({
-    where: {
-      userId: session.user.id,
-      providerId: providerId
-    }
-  })
+  try {
+    // Use Better Auth's getAccessToken API to handle token decryption and refresh
+    const tokenResponse = await auth.api.getAccessToken({
+      headers: request.headers,
+      body: {
+        providerId,
+        userId: session.user.id
+      }
+    })
 
-  if (!account?.accessToken) {
+    return tokenResponse.accessToken
+  } catch {
     throw createError({
       statusCode: 401,
       message: `No ${providerId} account linked`
     })
   }
-
-  return account.accessToken
 }

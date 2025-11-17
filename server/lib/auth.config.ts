@@ -34,7 +34,7 @@ export const auth = betterAuth({
   }),
 
   account: {
-    encryptOAuthTokens: false,
+    encryptOAuthTokens: true,
     accountLinking: {
       enabled: true,
       trustedProviders: ['github', 'planio'],

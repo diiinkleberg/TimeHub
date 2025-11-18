@@ -88,9 +88,28 @@ export interface TimeEntriesChartDay {
   [key: string]: string | number
 }
 
+const NO_ISSUE_LABEL = 'No Issue'
+
+const formatDayLabel = (date: Date) =>
+  date.toLocaleDateString('de-DE', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short'
+  })
+
+const createDateCursor = (input: Date) => {
+  const cursor = new Date(input)
+  cursor.setHours(0, 0, 0, 0)
+  return cursor
+}
+
+const buildIssueLabel = (issue?: PlanioIssue | undefined) =>
+  issue ? `#${issue.id}: ${issue.subject}` : NO_ISSUE_LABEL
+
 export function useStackedTimeEntriesData(
   entries: Ref<PlanioTimeEntry[]>,
-  issues: Ref<PlanioIssue[]>
+  issues: Ref<PlanioIssue[]>,
+  range: Ref<Range>
 ) {
   const issueMap = computed(() => {
     const map = new Map<number, PlanioIssue>()
@@ -102,11 +121,7 @@ export function useStackedTimeEntriesData(
     return map
   })
 
-  const chartData = computed<TimeEntriesChartDay[]>(() => {
-    if (!entries.value.length) {
-      return []
-    }
-
+  const groupedByDay = computed(() => {
     const groups = new Map<string, Map<string, number>>()
 
     entries.value.forEach((entry) => {
@@ -114,63 +129,68 @@ export function useStackedTimeEntriesData(
         ? issueMap.value.get(entry.issue.id)
         : undefined
 
-      const issueKey = issueRecord
-        ? `#${issueRecord.id}: ${issueRecord.subject}`
-        : 'No Issue'
+      const issueKey = buildIssueLabel(issueRecord)
 
       if (!groups.has(entry.spent_on)) {
         groups.set(entry.spent_on, new Map())
       }
 
-      const group = groups.get(entry.spent_on)!
-      group.set(issueKey, (group.get(issueKey) ?? 0) + entry.hours)
+      const dayGroup = groups.get(entry.spent_on)!
+      dayGroup.set(issueKey, (dayGroup.get(issueKey) ?? 0) + entry.hours)
     })
 
-    return Array.from(groups.entries())
-      .map(([date, group]) => {
-        const day: TimeEntriesChartDay = {
-          date,
-          dateLabel: new Date(date).toLocaleDateString('de-DE', {
-            weekday: 'short',
-            day: '2-digit',
-            month: 'short'
-          })
-        }
+    return groups
+  })
 
-        group.forEach((hours, key) => {
-          day[key] = hours
-        })
+  const dateSequence = computed(() => {
+    const sequence: { iso: string; label: string; }[] = []
+    const start = createDateCursor(range.value.start)
+    const end = createDateCursor(range.value.end)
 
-        return day
+    for (let cursor = new Date(start); cursor.getTime() <= end.getTime(); cursor.setDate(cursor.getDate() + 1)) {
+      sequence.push({
+        iso: toIsoDate(cursor),
+        label: formatDayLabel(cursor)
       })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    }
+
+    return sequence
+  })
+
+  const chartData = computed<TimeEntriesChartDay[]>(() =>
+    dateSequence.value.map(({ iso, label }) => {
+      const day: TimeEntriesChartDay = {
+        date: iso,
+        dateLabel: label
+      }
+
+      groupedByDay.value.get(iso)?.forEach((hours, key) => {
+        day[key] = hours
+      })
+
+      return day
+    })
+  )
+
+  const issueTotals = computed(() => {
+    const totals = new Map<string, number>()
+    groupedByDay.value.forEach((issuesMap) => {
+      issuesMap.forEach((hours, key) => {
+        totals.set(key, (totals.get(key) ?? 0) + hours)
+      })
+    })
+    return totals
   })
 
   const allIssues = computed(() => {
-    const set = new Set<string>()
+    const keys = Array.from(issueTotals.value.keys())
 
-    entries.value.forEach((entry) => {
-      const issueRecord = entry.issue?.id
-        ? issueMap.value.get(entry.issue.id)
-        : undefined
+    return keys.sort((a, b) => {
+      if (a === NO_ISSUE_LABEL) return 1
+      if (b === NO_ISSUE_LABEL) return -1
 
-      if (issueRecord) {
-        set.add(`#${issueRecord.id}: ${issueRecord.subject}`)
-      } else {
-        set.add('No Issue')
-      }
-    })
-
-    return Array.from(set).sort((a, b) => {
-      if (a === 'No Issue') {
-        return 1
-      }
-
-      if (b === 'No Issue') {
-        return -1
-      }
-
-      return a.localeCompare(b)
+      const diff = (issueTotals.value.get(b) ?? 0) - (issueTotals.value.get(a) ?? 0)
+      return diff !== 0 ? diff : a.localeCompare(b)
     })
   })
 
@@ -181,7 +201,7 @@ export function useStackedTimeEntriesData(
     day: TimeEntriesChartDay,
     _index: number,
     _elements: (HTMLElement | SVGElement)[]
-  ): HTMLElement | void => {
+  ): HTMLElement | undefined => {
     // Create the main container element
     const container = document.createElement('div')
     container.className = 'p-4 rounded-xl shadow-xl bg-elevated text-default border border-default min-w-[260px] max-w-[420px] space-y-2'
@@ -280,6 +300,8 @@ export function useStackedTimeEntriesData(
     return day?.dateLabel ?? ''
   }
 
+  const hasEntries = computed(() => entries.value.length > 0)
+
   return {
     chartData,
     allIssues,
@@ -287,6 +309,7 @@ export function useStackedTimeEntriesData(
     tooltipTemplate,
     xAccessor,
     yAccessors,
-    xTickFormat
+    xTickFormat,
+    hasEntries
   }
 }

@@ -43,8 +43,9 @@ const {
   tooltipTemplate,
   xAccessor,
   yAccessors,
-  xTickFormat
-} = useStackedTimeEntriesData(timeEntries, issues)
+  xTickFormat,
+  hasEntries
+} = useStackedTimeEntriesData(timeEntries, issues, range)
 
 const barColor = (_: TimeEntriesChartDay, index: number) =>
   colors[index % colors.length]
@@ -94,7 +95,7 @@ onMounted(() => {
     </div>
 
     <div
-      v-else-if="!chartData.length"
+      v-else-if="!hasEntries"
       class="text-center py-12 text-muted"
     >
       <UIcon

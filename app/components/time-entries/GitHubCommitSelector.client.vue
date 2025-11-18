@@ -321,11 +321,7 @@ const formatCommitDate = (value: string) => {
           </p>
         </div>
 
-        <div v-if="!props.spentOn" class="rounded-lg border border-dashed border-default p-4 text-sm text-muted">
-          Pick a date above to load commits.
-        </div>
-
-        <template v-else>
+        <template v-if="props.spentOn">
           <div v-if="commitsLoading" class="flex items-center gap-2 text-muted">
             <UIcon name="i-lucide-loader-2" class="size-4 animate-spin" />
             <span class="text-sm">Loading commits…</span>

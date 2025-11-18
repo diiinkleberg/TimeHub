@@ -88,7 +88,6 @@ const groups = computed(() => [
           class="p-4 flex w-full justify-center items-center font-bold"
         >
           <h1>SF</h1>
-          <!-- <span class="text-xl font-bold tracking-wide">TH</span> -->
         </div>
       </template>
 

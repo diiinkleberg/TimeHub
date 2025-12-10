@@ -40,8 +40,9 @@ const links = computed(() =>
   }))
 )
 
+const colorMode = useColorMode()
 const logoSrc = computed(() =>
-  useColorMode().value === 'dark'
+  colorMode.value === 'dark'
     ? '/brand_light.svg'
     : '/brand_dark.svg'
 )
@@ -77,11 +78,13 @@ const groups = computed(() => [
           v-if="!collapsed"
           class="w-full flex justify-center items-center p-4"
         >
-          <img
-            :src="logoSrc"
-            alt="TimeHub Logo"
-            class="h-12 w-auto mr-2"
-          >
+          <ClientOnly>
+            <img
+              :src="logoSrc"
+              alt="TimeHub Logo"
+              class="h-12 w-auto mr-2"
+            >
+          </ClientOnly>
         </div>
         <div
           v-else

@@ -5,41 +5,6 @@ definePageMeta({
   layout: false
 })
 
-const features = [
-  {
-    icon: 'i-lucide-clock',
-    title: 'Quick Time Entry',
-    description: 'Log time faster and more efficiently.'
-  },
-  {
-    icon: 'i-lucide-calendar',
-    title: 'Weekly Overview',
-    description:
-      'Visualise your time entries with interactive charts and summaries.'
-  },
-  {
-    icon: 'i-lucide-zap',
-    title: 'Fast & Lightweight',
-    description: 'Built with modern Nuxt tooling for speed and efficiency.'
-  },
-  {
-    icon: 'i-lucide-database',
-    title: 'PlanIO Integration',
-    description: 'Sync projects, issues, and activities directly from PlanIO.'
-  },
-  {
-    icon: 'i-lucide-search',
-    title: 'Smart Search',
-    description: 'Find issues and projects instantly with intelligent search.'
-  },
-  {
-    icon: 'i-lucide-bar-chart-3',
-    title: 'Analytics',
-    description:
-      'Track productivity with detailed, ready-to-share time analytics.'
-  }
-]
-
 const route = useRoute()
 const router = useRouter()
 const { signInWithPlanio } = await useAuth()
@@ -71,31 +36,74 @@ const handleReauth = async () => {
   }
 }
 
+const loginLoading = ref(false)
+const handleLogin = async () => {
+  loginLoading.value = true
+  try {
+    await signInWithPlanio()
+  } finally {
+    loginLoading.value = false
+  }
+}
+
 const currentYear = new Date().getFullYear()
+
+const items = [
+  '/Dashboard.png',
+  '/Settings.png',
+  '/TimeEntries.png'
+]
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col">
-    <UHeader>
-      <template #left>
-        <ULink
-          to="/"
-          class="flex items-center gap-2"
-        >
-          <AppLogo class="w-auto h-6 shrink-0" />
-        </ULink>
-      </template>
+  <div class="flex min-h-screen flex-col justify-center">
+    <main class="flex-1 flex items-center">
+      <UContainer class="w-full py-12">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+          <div class="space-y-8 text-center lg:text-left">
+            <UColorModeImage light="/brand_dark.svg" dark="/brand_light.svg" class="w-auto h-16 mx-auto lg:mx-0" />
+            
+            <div class="space-y-4">
+              <h1 class="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl">
+                TimeHub
+              </h1>
+              <p class="text-lg text-gray-500 dark:text-gray-400">
+                Internal Time Tracking & Reporting
+              </p>
+            </div>
 
-      <template #right>
-        <UColorModeButton />
-        <AuthLoginModal />
-      </template>
-    </UHeader>
+            <div class="flex justify-center lg:justify-start gap-4">
+              <UButton
+                size="lg"
+                color="primary"
+                :loading="loginLoading"
+                @click="handleLogin"
+              >
+                Sign in with Planio
+              </UButton>
+              <UColorModeButton />
+            </div>
+          </div>
 
-    <main class="flex-1">
+          <div class="relative">
+            <UCarousel
+              v-slot="{ item }"
+              :items="items"
+              :ui="{ item: 'basis-full' }"
+              class="rounded-xl overflow-hidden shadow-2xl ring-1 ring-primary/20"
+              arrows
+              indicators
+              autoplay
+            >
+              <img :src="item" class="w-full" draggable="false">
+            </UCarousel>
+          </div>
+        </div>
+      </UContainer>
+
       <div
         v-if="sessionExpired"
-        class="px-4 pt-6 mx-auto w-full max-w-3xl"
+        class="fixed top-4 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-50"
       >
         <UAlert
           color="warning"
@@ -105,7 +113,7 @@ const currentYear = new Date().getFullYear()
         >
           <template #description>
             <p class="text-sm">
-              Your session ended due to inactivity. Please sign in again to keep using TimeHub.
+              Your session has expired. Please sign in again.
             </p>
           </template>
           <template #actions>
@@ -116,7 +124,7 @@ const currentYear = new Date().getFullYear()
                 :loading="reauthLoading"
                 @click="handleReauth"
               >
-                Sign in again
+                Sign in
               </UButton>
               <UButton
                 size="xs"
@@ -130,50 +138,6 @@ const currentYear = new Date().getFullYear()
           </template>
         </UAlert>
       </div>
-      <UPageSection
-        id="features"
-        title="Everything you need"
-        class="py-24"
-      >
-        <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-          <UCard
-            v-for="feature in features"
-            :key="feature.title"
-            class="transition-shadow hover:shadow-lg"
-          >
-            <template #header>
-              <div class="flex items-center gap-3">
-                <div class="rounded-lg bg-primary/10 p-2">
-                  <UIcon
-                    :name="feature.icon"
-                    class="size-6 text-primary"
-                  />
-                </div>
-                <h3 class="font-semibold">
-                  {{ feature.title }}
-                </h3>
-              </div>
-            </template>
-            <p class="text-muted">
-              {{ feature.description }}
-            </p>
-          </UCard>
-        </div>
-      </UPageSection>
     </main>
-
-    <UFooter>
-      <template #left>
-        <span class="text-sm text-muted">© {{ currentYear }} TimeHub</span>
-      </template>
-      <template #right>
-        <ULink
-          to="https://github.com/skillnetworks/SF_TimeHub"
-          :external="true"
-        >
-          GitHub
-        </ULink>
-      </template>
-    </UFooter>
   </div>
 </template>

@@ -46,15 +46,7 @@ export const GitHubCommitSummarySchema = z.object({
   summary: z.string(),
   message: z.string(),
   date: z.iso.datetime(),
-  url: z.url(),
-  repo: z.string(),
-  author: z
-    .object({
-      name: z.string().nullable(),
-      login: z.string().nullable(),
-      avatarUrl: z.string().url().nullable()
-    })
-    .nullable()
+  repo: z.string()
 })
 
 /**

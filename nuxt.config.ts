@@ -6,7 +6,8 @@ export default defineNuxtConfig({
     '@nuxt/fonts',
     '@vueuse/nuxt',
     '@pinia/nuxt',
-    'pinia-plugin-persistedstate'
+    'pinia-plugin-persistedstate',
+    '@scalar/nuxt'
   ],
 
   devtools: {
@@ -14,6 +15,11 @@ export default defineNuxtConfig({
     timeline: {
       enabled: true
     }
+  },
+
+  scalar: {
+    darkMode: true,
+    showSidebar: true
   },
 
   css: ['~/assets/css/main.css'],
@@ -47,6 +53,9 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-01-15',
 
   nitro: {
+    experimental: {
+      openAPI: true
+    },
     preset: 'node-server',
     externals: {
       inline: [

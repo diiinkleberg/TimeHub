@@ -15,21 +15,21 @@ const handleSignIn = async () => {
 
 <template>
   <UModal
-    title="Sign in to TimeHub"
-    description="Connect your PlanIO account to start tracking time."
+    title="Authentication Required"
+    description="Please sign in with your PlanIO account to access the application."
     class="flex items-center justify-center"
   >
     <UButton
       label="Sign In"
       color="primary"
-      variant="subtle"
+      size="lg"
     />
 
     <template #body>
-      <div class="flex flex-col items-center justify-center w-full">
+      <div class="flex flex-col items-center justify-center w-full py-4">
         <UButton
           type="button"
-          size="lg"
+          size="xl"
           color="primary"
           icon="material-symbols:login"
           :trailing="true"
@@ -37,7 +37,7 @@ const handleSignIn = async () => {
           class="flex items-center justify-center w-full"
           @click="handleSignIn"
         >
-          Continue with PlanIO
+          Authenticate with PlanIO
         </UButton>
       </div>
     </template>

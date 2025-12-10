@@ -38,7 +38,7 @@ const {
 
 const {
   chartData,
-  allIssues,
+  issueKeys,
   colors,
   tooltipTemplate,
   xAccessor,
@@ -46,9 +46,6 @@ const {
   xTickFormat,
   hasEntries
 } = useStackedTimeEntriesData(timeEntries, issues, range)
-
-const barColor = (_: TimeEntriesChartDay, index: number) =>
-  colors[index % colors.length]
 
 const pending = computed(() => entriesPending.value || issuesPending.value)
 const error = computed(() => entriesError.value ?? issuesError.value ?? null)
@@ -128,7 +125,7 @@ onMounted(() => {
           <VisStackedBar
             :x="xAccessor"
             :y="yAccessors"
-            :color="barColor"
+            :color="colors"
             :rounded-corners="4"
             :bar-padding="0.5"
             :bar-max-width="90"
@@ -164,29 +161,10 @@ onMounted(() => {
               class="size-4 text-primary"
             />
             <h3 class="font-semibold text-highlighted">
-              Issues ({{ allIssues.length }})
+              Issues ({{ issueKeys.length }})
             </h3>
           </div>
         </template>
-
-        <div class="flex flex-wrap gap-2">
-          <div
-            v-for="(issue, index) in allIssues"
-            :key="issue"
-            class="flex items-center gap-2 text-xs px-3 py-2 rounded-md bg-elevated border border-default hover:border-primary/50 transition-colors"
-          >
-            <div
-              class="size-3 rounded-sm"
-              :style="{ backgroundColor: colors[index % colors.length] }"
-            />
-            <span
-              class="text-default truncate max-w-[280px]"
-              :title="issue"
-            >
-              {{ issue }}
-            </span>
-          </div>
-        </div>
       </UCard>
     </div>
   </div>

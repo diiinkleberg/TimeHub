@@ -7,7 +7,6 @@ Planio Time Tracking Wrapper built with Nuxt 4, Prisma ORM, and Better Auth.
 ### Prerequisites
 
 - Node.js 20+
-- pnpm
 - SQL Server (local or remote) with TCP/IP enabled!
 - Planio Application with this callback URL: `http://localhost:3000/api/auth/oauth2/callback/planio` for development
 
@@ -22,16 +21,13 @@ cp .env.example .env
 
 # 3. Update .env with your database credentials
 
-# 4. Generate Prisma Client
-pnpm run db:generate
-
-# 5. Generate Better Auth schema
+# 4. Generate Better Auth schema
 pnpm run auth:generate
 
-# 6. Push schema to database
+# 5. Push schema to database
 pnpm run db:push
 
-# 7. Start development server
+# 6. Start development server
 pnpm run dev
 ```
 

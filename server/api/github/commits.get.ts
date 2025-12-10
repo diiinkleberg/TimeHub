@@ -57,13 +57,7 @@ export default defineEventHandler(async (event) => {
         summary,
         message: message || summary,
         date,
-        url: commit.html_url,
-        repo: repoFullName,
-        author: {
-          name: commit.commit.author?.name ?? commit.author?.login ?? null,
-          login: commit.author?.login ?? null,
-          avatarUrl: commit.author?.avatar_url ?? commit.committer?.avatar_url ?? null
-        }
+        repo: repoFullName
       }
     })
 

@@ -28,3 +28,22 @@
 ### Why don't I have a refresh token?
 
 Github doesn't issue refresh tokens for OAuth apps. For regular OAuth apps, GitHub issues access tokens that remain valid indefinitely unless the user revokes them, the app revokes them, or they go unused for a year. There's no need for a refresh token because the access token doesn't expire on a short interval like Google or Discord.
+
+
+Anhangverzeichnis
+
+A1  - Projektantrag
+A2  - Use-Case-Diagramm
+A3  - Systemarchitektur-Diagramm
+A4  - Auth-Flow-Diagramm (Sequenzdiagramm)
+A5  - Datenbank-ERM
+A6  - Datenbankmodell (Tabellenstruktur)
+A7  - UI/UX-Mockups
+A8  - API-Design (OpenAPI-Spezifikation)
+A9  - API-Dokumentation
+A10 - Screenshots der fertigen Anwendung
+A11 - Benutzerhandbuch
+A12 - Wirtschaftlichkeitsanalyse (Amortisationsrechnung)
+A13 - Zeitplanung (Gantt-Diagramm oder Tabelle)
+A14 - Testprotokolle (Unit- und E2E-Tests)
+A15 - Quellcode-Auszüge (optional, relevante Stellen)

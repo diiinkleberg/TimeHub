@@ -112,54 +112,62 @@ const items = computed<DropdownMenuItem[][]>(() => [
 </script>
 
 <template>
-  <div
-    v-if="!user"
-    class="p-3"
-  >
-    <USkeleton class="h-8 w-full rounded" />
-  </div>
-
-  <UDropdownMenu
-    v-else
-    :items="items"
-    :content="{ align: 'center', collisionPadding: 12 }"
-    :ui="{
-      content: collapsed ? 'w-48' : 'w-(--reka-dropdown-menu-trigger-width)'
-    }"
-  >
-    <UButton
-      v-bind="{
-        label: collapsed ? undefined : user?.firstName || user?.name,
-        trailingIcon: collapsed ? undefined : 'i-lucide-chevrons-up-down'
-      }"
-      color="neutral"
-      variant="ghost"
-      block
-      :square="collapsed"
-      class="data-[state=open]:bg-elevated"
+  <ClientOnly>
+    <UDropdownMenu
+      v-if="user"
+      :items="items"
+      :content="{ align: 'center', collisionPadding: 12 }"
       :ui="{
-        trailingIcon: 'text-dimmed'
+        content: collapsed ? 'w-48' : 'w-(--reka-dropdown-menu-trigger-width)'
       }"
     >
-      <template #leading>
-        <UAvatar
-          v-if="user?.image"
-          :src="user.image"
-          :alt="user?.name || 'User Avatar'"
-          size="sm"
-          rounded="full"
+      <UButton
+        v-bind="{
+          label: collapsed ? undefined : user?.firstName || user?.name,
+          trailingIcon: collapsed ? undefined : 'i-lucide-chevrons-up-down'
+        }"
+        color="neutral"
+        variant="ghost"
+        block
+        :square="collapsed"
+        class="data-[state=open]:bg-elevated"
+        :ui="{
+          trailingIcon: 'text-dimmed'
+        }"
+      >
+        <template #leading>
+          <UAvatar
+            v-if="user?.image"
+            :src="user.image"
+            :alt="user?.name || 'User Avatar'"
+            size="sm"
+            rounded="full"
+          />
+        </template>
+      </UButton>
+      <template #item-leading="{ item }">
+        <span
+          v-if="(item as any).slot === 'chip'"
+          :style="{
+            '--chip-light': `var(--color-${(item as any).chip}-500)`,
+            '--chip-dark': `var(--color-${(item as any).chip}-400)`
+          }"
+          class="ms-0.5 size-2 rounded-full bg-(--chip-light) dark:bg-(--chip-dark)"
         />
       </template>
-    </UButton>
-    <template #item-leading="{ item }">
-      <span
-        v-if="(item as any).slot === 'chip'"
-        :style="{
-          '--chip-light': `var(--color-${(item as any).chip}-500)`,
-          '--chip-dark': `var(--color-${(item as any).chip}-400)`
-        }"
-        class="ms-0.5 size-2 rounded-full bg-(--chip-light) dark:bg-(--chip-dark)"
-      />
+    </UDropdownMenu>
+
+    <div
+      v-else
+      class="p-3"
+    >
+      <USkeleton class="h-8 w-full rounded" />
+    </div>
+
+    <template #fallback>
+      <div class="p-3">
+        <USkeleton class="h-8 w-full rounded" />
+      </div>
     </template>
-  </UDropdownMenu>
+  </ClientOnly>
 </template>

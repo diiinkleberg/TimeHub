@@ -1,5 +1,5 @@
 import { auth } from '~~/server/lib/auth.config'
-import { toWebRequest, type H3Event } from 'h3'
+import { createError, toWebRequest, type H3Event } from 'h3'
 
 /**
  * Get user's access token for a specific OAuth provider

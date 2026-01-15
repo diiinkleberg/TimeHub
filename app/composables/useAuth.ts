@@ -67,7 +67,12 @@ async function createAuth(): Promise<UseAuthReturn> {
     unlinkGithubAccount
   }
 }
+// resuable auth singleton with leak prevention
+const useAuthSingleton = import.meta.client
+  ? createSingletonPromise(createAuth)
+  : null
 
-const useAuthSingleton = createSingletonPromise(createAuth)
-
-export const useAuth = () => useAuthSingleton()
+export const useAuth = () =>
+  import.meta.client && useAuthSingleton
+    ? useAuthSingleton()
+    : createAuth()

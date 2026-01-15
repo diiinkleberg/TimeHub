@@ -3,8 +3,8 @@ import type { PlanioTimeEntry } from '#shared/schemas/planio/time-entry'
 import type { Range } from '~/types'
 
 const palette = [
-  '#10b981', // emerald-500 (Green)
-  '#f97316', // orange-500 (Orange)
+  '#10b981', // emerald-500
+  '#f97316', // orange-500
   '#3b82f6', // blue-500
   '#8b5cf6', // violet-500
   '#ec4899', // pink-500

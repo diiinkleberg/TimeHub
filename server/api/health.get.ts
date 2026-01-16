@@ -1,6 +1,6 @@
 export default defineEventHandler(() => {
   return {
-    status: 'ok',
+    status: 'ok, laueft',
     timestamp: new Date().toISOString(),
     app: {
       name: process.env.APP_NAME,

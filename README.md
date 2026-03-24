@@ -1,158 +1,140 @@
 # TimeHub
 
-Planio Time Tracking Wrapper built with Nuxt 4, Prisma ORM, and Better Auth.
+TimeHub is a work-in-progress Planio time tracking wrapper built with Nuxt 4. It provides a modern web interface for authenticating with Planio and working with time tracking data through a custom application layer.
 
-[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+## Overview
 
-### Prerequisites
+This project combines a Nuxt-based frontend with server-side authentication and database-backed application state. It is designed as a practical full-stack project focused on authentication flows, external API integration, and maintainable web application structure.
+
+## Tech Stack
+
+- Nuxt 4
+- Nuxt UI
+- Better Auth
+- Prisma ORM
+- SQL Server
+- TypeScript
+- pnpm
+
+## Current Features
+
+- Planio OAuth authentication
+- Server-side application logic with Nuxt
+- SQL Server persistence through Prisma
+- Better Auth integration
+- Nuxt UI-based frontend
+- Local development workflow with Prisma schema management
+
+## Project Status
+
+This project is still under active development. The current version is intended as a working prototype and learning project, with additional functionality and refinement planned.
+
+## Prerequisites
+
+Before running the project locally, make sure the following are installed and configured:
 
 - Node.js 20+
-- SQL Server (local or remote) with TCP/IP enabled!
-- Planio Application with this callback URL: `http://localhost:3000/api/auth/oauth2/callback/planio` for development
+- pnpm
+- SQL Server (local or remote, with TCP/IP enabled)
+- A Planio application configured with this development callback URL:
 
-### Installation
+`http://localhost:3000/api/auth/oauth2/callback/planio`
+
+## Setup
+
+1. Install dependencies:
 
 ```bash
-# 1. Install dependencies
 pnpm install
+```
 
-# 2. Copy environment template
+2. Copy the environment template:
+
+```bash
 cp .env.example .env
+```
 
-# 3. Update .env with your database credentials
+3. Update `.env` with your local database and authentication settings.
 
-# 4. Generate Better Auth schema
+4. Generate the Better Auth schema:
+
+```bash
 pnpm run auth:generate
+```
 
-# 5. Push schema to database
+5. Push the Prisma schema to the database:
+
+```bash
 pnpm run db:push
+```
 
-# 6. Start development server
+6. Start the development server:
+
+```bash
 pnpm run dev
 ```
 
-Visit `http://localhost:3000` 🚀
+The app will then be available at:
 
----
+`http://localhost:3000`
 
 ## Available Commands
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start development server |
-| `pnpm build` | Build for production |
-| `pnpm preview` | Preview production build |
-| `pnpm db:generate` | Generate Prisma Client |
-| `pnpm db:push` | Sync schema to database |
-| `pnpm db:migrate` | Create migration |
+| `pnpm dev` | Start the development server |
+| `pnpm build` | Build the application for production |
+| `pnpm preview` | Preview the production build |
+| `pnpm db:generate` | Generate the Prisma Client |
+| `pnpm db:push` | Push the schema to the database |
+| `pnpm db:migrate` | Create and apply a migration |
 | `pnpm db:studio` | Open Prisma Studio |
 | `pnpm auth:generate` | Generate Better Auth schema |
 
----
+## Configuration Notes
+
+- SQL Server must be reachable from the application and correctly configured in `.env`.
+- Planio OAuth must use the configured callback URL for local development.
+- After schema changes, Prisma Client should be regenerated if needed.
 
 ## Troubleshooting
 
-### Common Issues
+### Prisma Client not found
 
-<details>
-<summary><b>Prisma Client not found</b></summary>
+If Prisma Client is missing during development or build:
 
-**Symptom:** `Cannot find module '@prisma/client'`
-
-**Solution:**
 ```bash
 pnpm run db:generate
 pnpm run build
 ```
 
-</details>
+### Production build issues with Prisma
 
-<details>
-<summary><b>Production build fails with Prisma errors</b></summary>
+If the production build fails with Prisma-related runtime or bundling errors, verify that `nuxt.config.ts` includes the Nitro configuration needed for Prisma compatibility.
 
-**Symptom:** `ERR_INVALID_FILE_URL_PATH` or `__dirname is not defined`
+Typical issues include:
 
-**Cause:** Nitro is bundling Prisma (should be external)
+- `Cannot find module '@prisma/client'`
+- `ERR_INVALID_FILE_URL_PATH`
+- `__dirname is not defined`
 
-**Solution:** Verify `nuxt.config.ts` has this configuration:
+### Why this happens
 
-```typescript
-export default defineNuxtConfig({
-  nitro: {
-    experimental: {
-      wasm: true,
-    },
-    esbuild: {
-      options: {
-        target: "es2024",
-      }
-    }
-  }
-});
-```
+Prisma depends on runtime binary resolution, and Nitro bundling can interfere with that behavior in production builds. Ensuring the correct Nitro and Prisma generator configuration helps avoid these issues.
 
-**Why this is needed:** See [Prisma & Nitro Bundling](#prisma--nitro-bundling) section below.
+## Learning Goals
 
-</details>
+This project is mainly used to explore and demonstrate:
 
----
-
-## Prisma & Nitro Bundling
-
-<details>
-<summary><b>Why special Nitro configuration is required</b></summary>
-
-### The Problem
-
-When building for production, Nuxt's Nitro bundler (Rollup) tries to bundle all dependencies into a single `.mjs` file. This breaks Prisma because:
-
-1. **Prisma uses native binaries** - The Prisma Client loads platform-specific query engine binaries (`.node` files) at runtime
-2. **ESM bundling breaks path resolution** - Prisma uses `import.meta.url` to locate binaries:
-   ```javascript
-   // Before bundling (works):
-   import.meta.url // "file:///E:/Repos/TimeHub/node_modules/@prisma/client/index.js"
-   
-   // After bundling (breaks):
-   import.meta.url // "file:///_entry.js" (invalid path)
-   ```
-3. **`createRequire()` fails** - Prisma needs `createRequire(import.meta.url)` but the bundled path is invalid
-
-### The Solution
-
-Configure Nitro to use modern build targets that handle ESM properly:
-
-```typescript
-nitro: {
-  experimental: {
-    wasm: true,  // Enable WebAssembly support
-  },
-  esbuild: {
-    options: {
-      target: "es2024",  // Modern target that handles import.meta better
-    }
-  }
-}
-```
-### Generator Configuration
-
-```prisma
-generator client {
-  provider      = "prisma-client-js"
-  runtime       = "nodejs"           // Node.js runtime (not edge)
-  engineType    = "library"          // Better ESM compatibility
-  binaryTargets = ["native", "windows"]  // Development + deployment targets
-}
-```
-
-| Option | Purpose |
-|--------|---------|
-| `runtime = "nodejs"` | Ensures Node.js-specific code generation |
-| `engineType = "library"` | Uses Node.js native modules (better for ESM) |
-| `binaryTargets` | Includes query engines for dev + production OS |
+- OAuth integration with external providers
+- full-stack Nuxt application structure
+- authentication and session management
+- database access with Prisma
+- practical project organization for real-world web apps
 
 ## Resources
 
-- [Nuxt 4 Documentation](https://nuxt.com)
+- [Nuxt Documentation](https://nuxt.com)
+- [Nuxt UI Documentation](https://ui.nuxt.com)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [Better Auth Documentation](https://better-auth.com)
-- [Nuxt UI Documentation](https://ui.nuxt.com)
